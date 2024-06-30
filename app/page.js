@@ -10,9 +10,8 @@ import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
 import { CircularProgress, List, ListItem, ListItemButton, ListItemText, Snackbar } from "@mui/material";
-import nextConfig from "@/next.config.mjs";
 
-const { SERVER_BASE_URL } = nextConfig.env
+const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
 // TODO: api 호출 부분만 client component로 분리하기
 export default function Home() {
