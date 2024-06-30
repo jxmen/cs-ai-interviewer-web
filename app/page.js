@@ -8,16 +8,39 @@ import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
 import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { CircularProgress, Divider, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 
+const SERVER_BASE_URL = 'http://localhost:8080'; // TODO: 환경 변수로 분리하기
+
+// TODO: api 호출 부분만 client component로 분리하기
 export default function Home() {
   const router = useRouter();
   const [tab, setTab] = useState('dsa');
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState([]); // [{ id, question, answer }
+  const [isError, setIsError] = useState(false);
 
   const handleChangeTab = (event, newValue) => {
     router.push(`/?tab=${newValue}`);
     setTab(newValue)
   };
+
+  useEffect(() => {
+    setIsLoading(true);
+
+    fetch(`${SERVER_BASE_URL}/api/subjects?category=${tab}`)
+      .then(serverPromise => {
+        serverPromise.json()
+          .then(response => setData(response.data))
+          .then(_ => setIsLoading(false))
+      })
+      .catch(err => {
+        console.error(err)
+        setIsError(true)
+      });
+  }, [tab]);
 
   return (
     <Container maxWidth="sm">
@@ -33,18 +56,24 @@ export default function Home() {
         <Tab label="운영체제" value="os" />
         <Tab label="네트워크" value="network" />
       </Tabs>
-      <TabPanel value={tab} index="dsa">
-        <ComingSoonAlert />
-      </TabPanel>
-      <TabPanel value={tab} index="database">
-        <ComingSoonAlert />
-      </TabPanel>
-      <TabPanel value={tab} index="os">
-        <ComingSoonAlert />
-      </TabPanel>
-      <TabPanel value={tab} index="network">
-        <ComingSoonAlert />
-      </TabPanel>
+      {['dsa', 'database', 'os', 'network'].map((category) => (
+        <TabPanel value={tab} index={category} key={category}>
+          {
+            isError ? <Alert severity="error">데이터를 불러오는 중 오류가 발생했습니다.</Alert> :
+              isLoading ? <CircularProgress /> :
+                (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert>:
+                  <List>
+                    {data.map((item, index) => (
+                      <ListItem key={item.id}>
+                        <ListItemButton divider={true}>
+                          <ListItemText primary={`${index + 1}. ${item.title}`}/>
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+          }
+        </TabPanel>
+      ))}
     </Container>
   );
 }
@@ -65,10 +94,4 @@ function TabPanel(props) {
       )}
     </div>
   );
-}
-
-function ComingSoonAlert() {
-  return (
-    <Alert severity="info">준비중입니다.</Alert>
-  )
 }
