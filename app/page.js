@@ -46,7 +46,7 @@ export default function Home() {
   }
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" sx={{ padding: '50px' }}>
       <Typography variant="h4" component="h1" gutterBottom>
         CS 면접 대비 - AI 면접관
       </Typography>
