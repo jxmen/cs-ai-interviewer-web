@@ -9,7 +9,7 @@ import Tab from '@mui/material/Tab'
 import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
-import { CircularProgress, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import { CircularProgress, List, ListItem, ListItemButton, ListItemText, Snackbar } from "@mui/material";
 import nextConfig from "@/next.config.mjs";
 
 const { SERVER_BASE_URL } = nextConfig.env
@@ -17,11 +17,13 @@ const { SERVER_BASE_URL } = nextConfig.env
 // TODO: api 호출 부분만 client component로 분리하기
 export default function Home() {
   const router = useRouter();
+
   const [tab, setTab] = useState('dsa');
 
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState([]); // [{ id, question, answer }
   const [isError, setIsError] = useState(false);
+  const [preParingSnackBarState, setPreParingSnackBarState] = useState(false);
 
   const handleChangeTab = (event, newValue) => {
     router.push(`/?tab=${newValue}`);
@@ -62,9 +64,24 @@ export default function Home() {
                 (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert>:
                   <List>
                     {data.map((item, index) => (
-                      <ListItem key={item.id}>
-                        <ListItemButton divider={true}>
+                      <ListItem key={item.id} disablePadding={true}>
+                        <ListItemButton divider={true} onClick={() => setPreParingSnackBarState(true)}>
                           <ListItemText primary={`${index + 1}. ${item.title}`}/>
+                          <Snackbar
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                            open={preParingSnackBarState}
+                            autoHideDuration={3000}
+                            onClose={() => setPreParingSnackBarState(false)}
+                          >
+                            <Alert
+                              onClose={() => setPreParingSnackBarState(false)}
+                              severity="info"
+                              variant="filled"
+                            >
+                              준비중입니다.
+                            </Alert>
+
+                          </Snackbar>
                         </ListItemButton>
                       </ListItem>
                     ))}
