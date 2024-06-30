@@ -9,9 +9,10 @@ import Tab from '@mui/material/Tab'
 import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
-import { CircularProgress, Divider, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import { CircularProgress, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import nextConfig from "@/next.config.mjs";
 
-const SERVER_BASE_URL = 'http://localhost:8080'; // TODO: 환경 변수로 분리하기
+const { SERVER_BASE_URL } = nextConfig.env
 
 // TODO: api 호출 부분만 client component로 분리하기
 export default function Home() {
@@ -36,10 +37,7 @@ export default function Home() {
           .then(response => setData(response.data))
           .then(_ => setIsLoading(false))
       })
-      .catch(err => {
-        console.error(err)
-        setIsError(true)
-      });
+      .catch(_ => setIsError(true));
   }, [tab]);
 
   return (
