@@ -9,7 +9,8 @@ import Tab from '@mui/material/Tab'
 import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
-import { CircularProgress, List, ListItem, ListItemButton, ListItemText, Snackbar } from "@mui/material";
+import { CircularProgress, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 
 const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
@@ -20,9 +21,8 @@ export default function Home() {
   const [tab, setTab] = useState('dsa');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState([]); // [{ id, question, answer }
+  const [data, setData] = useState([]); // [{ id, question, answer, category }
   const [isError, setIsError] = useState(false);
-  const [preParingSnackBarState, setPreParingSnackBarState] = useState(false);
 
   const handleChangeTab = (event, newValue) => {
     router.push(`/?tab=${newValue}`);
@@ -41,6 +41,10 @@ export default function Home() {
       .catch(_ => setIsError(true));
   }, [tab]);
 
+  const handleSubjectItemButtonClick = (itemId) => {
+    router.push(`/subject/${itemId}`)
+  }
+
   return (
     <Container maxWidth="sm">
       <Typography variant="h4" component="h1" gutterBottom>
@@ -50,37 +54,22 @@ export default function Home() {
         AI 면접관과 함께 CS 면접을 준비해보세요!
       </Typography>
       <Tabs value={tab} onChange={handleChangeTab} aria-label="category tabs">
-        <Tab label="자료구조/알고리즘" value="dsa" />
-        <Tab label="데이터베이스" value="database" />
-        <Tab label="운영체제" value="os" />
-        <Tab label="네트워크" value="network" />
+        <Tab label="자료구조/알고리즘" value="dsa"/>
+        <Tab label="데이터베이스" value="database"/>
+        <Tab label="운영체제" value="os"/>
+        <Tab label="네트워크" value="network"/>
       </Tabs>
       {['dsa', 'database', 'os', 'network'].map((category) => (
         <TabPanel value={tab} index={category} key={category}>
           {
             isError ? <Alert severity="error">데이터를 불러오는 중 오류가 발생했습니다.</Alert> :
-              isLoading ? <CircularProgress /> :
-                (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert>:
+              isLoading ? <CircularProgress/> :
+                (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert> :
                   <List>
                     {data.map((item, index) => (
                       <ListItem key={item.id} disablePadding={true}>
-                        <ListItemButton divider={true} onClick={() => setPreParingSnackBarState(true)}>
+                        <ListItemButton divider={true} onClick={() => handleSubjectItemButtonClick(item.id)}>
                           <ListItemText primary={`${index + 1}. ${item.title}`}/>
-                          <Snackbar
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                            open={preParingSnackBarState}
-                            autoHideDuration={3000}
-                            onClose={() => setPreParingSnackBarState(false)}
-                          >
-                            <Alert
-                              onClose={() => setPreParingSnackBarState(false)}
-                              severity="info"
-                              variant="filled"
-                            >
-                              준비중입니다.
-                            </Alert>
-
-                          </Snackbar>
                         </ListItemButton>
                       </ListItem>
                     ))}
