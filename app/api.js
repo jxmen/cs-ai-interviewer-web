@@ -1,4 +1,6 @@
-const SERVER_BASE_URL = 'http://localhost:8080' // TODO: change this to production server
+import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
+
+const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
 
 async function fetchChats(subjectId, sessionId) {
   const headers = {}
@@ -49,8 +51,9 @@ async function fetchAnswer(subjectId, sessionId, answer) {
     body: JSON.stringify({ answer })
   });
 
+  const json = await response.json();
   return {
-    data: await response.json(),
+    data: json,
     isError: response.status >= 400
   }
 }
