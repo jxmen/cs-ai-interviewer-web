@@ -66,7 +66,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
     // 기존 더미 답변을 지우고 점수가 매겨진 새로운 답변으로 데이터를 추가한다.
     deleteLastChat()
-    addAnswerChat(data.score, data.message)
+    addAnswerChat(data.score, answer)
 
     // 꼬리 질문을 추가한다.
     addQuestionChat(data.nextQuestion)
