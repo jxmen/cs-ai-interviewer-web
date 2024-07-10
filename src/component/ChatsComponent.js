@@ -72,7 +72,6 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     addQuestionChat(data.nextQuestion)
   }
 
-
   return (
     <>
       {
@@ -115,6 +114,20 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 }
 
 function AnswerInputFieldBox({ isLoading, isError, submitAnswer }) {
+  const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
+
+  useEffect(() => {
+    const answerElement = document.getElementById('answer')
+    const handleAnswerChange = () => {
+      setIsAnswerEmpty(answerElement.value.trim() === "")
+    }
+
+    answerElement.addEventListener('input', handleAnswerChange)
+
+    // Cleanup event listener
+    return () => answerElement.removeEventListener('input', handleAnswerChange)
+  }, []);
+
   if (isLoading) {
     return (
       <Box> <CircularProgress/> 답변 제출 중... </Box>
@@ -137,7 +150,7 @@ function AnswerInputFieldBox({ isLoading, isError, submitAnswer }) {
       }}>
         <Button variant="contained"
           onClick={submitAnswer}
-          disabled={isLoading}>제출하기
+          disabled={isLoading || isAnswerEmpty}>제출하기
         </Button>
       </Box>
 
