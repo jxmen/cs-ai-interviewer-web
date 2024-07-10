@@ -7,27 +7,44 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId }) {
-  const [chats, setChats] = useState([])
+  const [chats, setChats] = useState([
+    {
+      type: "question",
+      message: "가나다라마바사\n".repeat(3)
+    },
+    {
+      type: "answer",
+      message: "abcdefg\n".repeat(3)
+    },
+    {
+      tyoe: "question",
+      message: "답변에 대한 점수: 0점\n 이유: 시간 복잡도와 공간 복잡도에 대한 이해가 부족해 보입니다. 알고리즘의 성능을 평가하는 데 있어 매우 중요한 개념이므로 반드시 알고 있어야 합니다.\n공부할 수 있는 키워드: 빅오 표기법 / 시간 복잡도 / 공간 복잡도 / 알고리즘 효율성 / 어쩌구저쩌구 / qwerasdfzxcv / 1234567890 / 베재댜겨쇼미나어롷크투츞\n꼬리 질문: 빅오 표기법에 대해 아는 대로 설명해보세요.\n"
+    }
+  ])
   const [chatError, setChatError] = useState(false)
 
   const [isSubmitAnswerLoading, setIsSubmitAnswerLoading] = useState(false)
   const [submitAnswerError, setSubmitAnswerError] = useState(false)
 
   useEffect(() => {
-    fetchChats(subjectId, sessionId).then(({ data, isError }) => {
-      if (isError) {
-        console.error('Error while fetching chats')
-        setChatError(true)
-        return
-      }
+    function extracted() {
+      fetchChats(subjectId, sessionId).then(({ data, isError }) => {
+        if (isError) {
+          console.error('Error while fetching chats')
+          setChatError(true)
+          return
+        }
 
-      const question = { type: "question", message: subjectDetailQuestion };
-      if (data.length === 0) {
-        setChats([question])
-      } else {
-        setChats([question, ...data])
-      }
-    })
+        const question = { type: "question", message: subjectDetailQuestion };
+        if (data.length === 0) {
+          setChats([question])
+        } else {
+          setChats([question, ...data])
+        }
+      })
+    }
+
+    // extracted();
   }, [subjectId, subjectDetailQuestion, sessionId]);
 
   const addAnswerChat = (score, message) => {
@@ -88,9 +105,17 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
                   }
                 </Box>
                 <Divider/>
-                <Typography variant="subtitle1" sx={{ padding: '10px' }}>
-                  {chat.message}
-                </Typography>
+                <Box sx={{ padding: '10px' }}>
+                  {
+                    chat.message.split('\n').map((line, index) => {
+                      return (
+                        <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
+                          {line}
+                        </Typography>
+                      )
+                    })
+                  }
+                </Box>
               </Box>
             )
           })
