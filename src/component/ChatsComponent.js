@@ -116,18 +116,6 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 function AnswerInputFieldBox({ isLoading, isError, submitAnswer }) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
 
-  useEffect(() => {
-    const answerElement = document.getElementById('answer')
-    const handleAnswerChange = () => {
-      setIsAnswerEmpty(answerElement.value.trim() === "")
-    }
-
-    answerElement.addEventListener('input', handleAnswerChange)
-
-    // Cleanup event listener
-    return () => answerElement.removeEventListener('input', handleAnswerChange)
-  }, []);
-
   if (isLoading) {
     return (
       <Box> <CircularProgress/> 답변 제출 중... </Box>
@@ -142,7 +130,10 @@ function AnswerInputFieldBox({ isLoading, isError, submitAnswer }) {
 
   return (
     <Box>
-      <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline/>
+      <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline
+        onChange={(e) => {
+          setIsAnswerEmpty(e.target.value.trim() === "")
+        }}/>
       <Box sx={{
         display: 'flex',
         justifyContent: 'flex-end',
