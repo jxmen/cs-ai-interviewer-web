@@ -41,8 +41,8 @@ export default function Home() {
       .catch(_ => setIsError(true));
   }, [tab]);
 
-  const handleSubjectItemButtonClick = (itemId) => {
-    router.push(`/subject/${itemId}`)
+  const moveSubjectDetail = (subjectId) => {
+    router.push(`/subject/${subjectId}`)
   }
 
   return (
@@ -60,20 +60,18 @@ export default function Home() {
         <Tab label="네트워크" value="network"/>
       </Tabs>
       {['dsa', 'database', 'os', 'network'].map((category) => (
-        <TabPanel value={tab} index={category} key={category}>
+        <TabPanel value={tab} index={category} key={category} isLoading={isLoading} isError={isError}>
           {
-            isError ? <Alert severity="error">데이터를 불러오는 중 오류가 발생했습니다.</Alert> :
-              isLoading ? <CircularProgress/> :
-                (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert> :
-                  <List>
-                    {data.map((item, index) => (
-                      <ListItem key={item.id} disablePadding={true}>
-                        <ListItemButton divider={true} onClick={() => handleSubjectItemButtonClick(item.id)}>
-                          <ListItemText primary={`${index + 1}. ${item.title}`}/>
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                  </List>
+            (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert> :
+              <List>
+                {data.map((item, index) => (
+                  <ListItem key={item.id} disablePadding={true}>
+                    <ListItemButton divider={true} onClick={() => moveSubjectDetail(item.id)}>
+                      <ListItemText primary={`${index + 1}. ${item.title}`}/>
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
           }
         </TabPanel>
       ))}
@@ -82,7 +80,7 @@ export default function Home() {
 }
 
 function TabPanel(props) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, isLoading, isError, ...other } = props;
 
   return (
     <div
@@ -93,7 +91,19 @@ function TabPanel(props) {
       {...other}
     >
       {value === index && (
-        <Box> {children} </Box>
+        isError ? <Alert severity="error">데이터를 불러오는 중 오류가 발생했습니다.</Alert> :
+          isLoading ? (
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              height: '50px',
+              padding: '10px'
+            }}>
+              <CircularProgress/>
+              <Box sx={{ marginLeft: '15px' }}/>데이터 불러오는중... <Box/>
+            </Box>
+          ) :
+            <Box> {children} </Box>
       )}
     </div>
   );
