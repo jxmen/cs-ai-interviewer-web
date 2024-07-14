@@ -8,16 +8,19 @@ import Typography from "@mui/material/Typography";
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId }) {
   const [chats, setChats] = useState([])
-  const [chatError, setChatError] = useState(false)
+  const [isChatLoading, setIsChatLoading] = useState(false)
+  const [isChatError, setIsChatError] = useState(false)
 
   const [isSubmitAnswerLoading, setIsSubmitAnswerLoading] = useState(false)
-  const [submitAnswerError, setSubmitAnswerError] = useState(false)
+  const [isSubmitAnswerError, setIsSubmitAnswerError] = useState(false)
 
   useEffect(() => {
+    setIsChatLoading(true)
     fetchChats(subjectId, sessionId).then(({ data, isError }) => {
       if (isError) {
         console.error('Error while fetching chats')
-        setChatError(true)
+        setIsChatLoading(false)
+        setIsChatError(true)
         return
       }
 
@@ -27,6 +30,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       } else {
         setChats([question, ...data])
       }
+      setIsChatLoading(false)
     })
   }, [subjectId, subjectDetailQuestion, sessionId]);
 
@@ -60,7 +64,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     const { data, isError } = await fetchAnswer(subjectId, sessionId, answer)
     if (isError) {
       deleteLastChat()
-      setSubmitAnswerError(true)
+      setIsSubmitAnswerError(true)
       return
     }
 
@@ -75,7 +79,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
   return (
     <>
       {
-        chatError ? <Box> 데이터를 불러오는 중 오류가 발생했습니다. </Box> :
+        isChatError ? <Alert severity={"error"}> 채팅 목록을 불러오는 중 오류가 발생했습니다.</Alert> :
           chats?.map((chat, index) => {
             return (
               <Box key={index} sx={{ paddingTop: '10px', }}>
@@ -104,8 +108,10 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       }
 
       <AnswerInputFieldBox
+        isChatLoading={isChatLoading}
+        isChatLoadingError={isChatError}
         isLoading={isSubmitAnswerLoading}
-        isError={submitAnswerError}
+        isError={isSubmitAnswerError}
         submitAnswer={submitAnswer}
       />
     </>
@@ -113,13 +119,15 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
 }
 
-function AnswerInputFieldBox({ isLoading, isError, submitAnswer }) {
+function AnswerInputFieldBox({ isChatLoading, isChatLoadingError, isLoading, isError, submitAnswer }) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
+  if (isChatLoading) return
+  if (isChatLoadingError) return
 
   if (isLoading) {
     return (
       <Box> <CircularProgress/> 답변 제출 중... </Box>
-    )
+    );
   }
 
   if (isError) {
