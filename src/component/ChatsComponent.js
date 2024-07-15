@@ -6,7 +6,7 @@ import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/materi
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
-export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId }) {
+export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, csrfToken }) {
   const [chats, setChats] = useState([])
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
@@ -16,7 +16,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
   useEffect(() => {
     setIsChatLoading(true)
-    fetchChats(subjectId, sessionId).then(({ data, isError }) => {
+    fetchChats(subjectId, sessionId, csrfToken).then(({ data, isError }) => {
       if (isError) {
         console.error('Error while fetching chats')
         setIsChatLoading(false)
@@ -61,7 +61,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
     addDummyAnswerChat(answer)
-    const { data, isError } = await fetchAnswer(subjectId, sessionId, answer)
+    const { data, isError } = await fetchAnswer(subjectId, sessionId, answer, csrfToken)
     if (isError) {
       deleteLastChat()
       setIsSubmitAnswerError(true)
