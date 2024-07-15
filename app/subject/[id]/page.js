@@ -39,6 +39,14 @@ export default async function SubjectDetailPage({
     }
   }
 
+  const csrfToken = () => {
+    if (cookies().has('XSRF-TOKEN')) {
+      return cookies().get('XSRF-TOKEN').value
+    } else {
+      return null
+    }
+  }
+
   const { data: subjectDetail, isError: isSubjectDetailFetchError } = await fetchSubjectDetail(subjectId)
 
   return (
@@ -50,6 +58,7 @@ export default async function SubjectDetailPage({
         subjectId={subjectId}
         subjectDetailQuestion={subjectDetail.question}
         sessionId={sessionId()}
+        csrfToken={csrfToken()}
       />
 
     </Container>

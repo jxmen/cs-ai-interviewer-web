@@ -2,16 +2,19 @@ import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/post
 
 const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
 
-async function fetchChats(subjectId, sessionId) {
+async function fetchChats(subjectId, sessionId, csrfToken) {
   const headers = {}
+  if (csrfToken) {
+    headers['X-XSRF-TOKEN'] = csrfToken;
+  }
   if (sessionId) {
-    headers['Cookie'] = `SESSION=${sessionId}`
+    headers['Cookie'] = `SESSION=${sessionId}`;
   }
 
   const response = await fetch(`${SERVER_BASE_URL}/api/chat/messages?subjectId=${subjectId}`, {
     credentials: 'include',
     headers
-  })
+  });
 
   const json = await response.json();
   return {
@@ -36,12 +39,13 @@ async function fetchSubjectDetail(subjectId) {
   };
 }
 
-async function fetchAnswer(subjectId, sessionId, answer) {
-  const headers = {
-    'Content-Type': 'application/json'
+async function fetchAnswer(subjectId, sessionId, answer, csrfToken) {
+  const headers = { 'Content-Type': 'application/json', }
+  if (csrfToken) {
+    headers['X-XSRF-TOKEN'] = csrfToken;
   }
   if (sessionId) {
-    headers['Cookie'] = `SESSION=${sessionId}`
+    headers['Cookie'] = `SESSION=${sessionId}`;
   }
 
   const response = await fetch(`${SERVER_BASE_URL}/api/subjects/${subjectId}/answer`, {
