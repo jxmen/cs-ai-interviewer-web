@@ -42,7 +42,7 @@ export default function Home() {
   }, [tab]);
 
   const moveSubjectDetail = (subjectId) => {
-    router.push(`/subject/${subjectId}`)
+    router.push(`/subjects/${subjectId}`)
   }
 
   return (
