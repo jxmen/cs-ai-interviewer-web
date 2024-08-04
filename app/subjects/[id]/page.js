@@ -7,6 +7,26 @@ import Typography from "@mui/material/Typography";
 import { categoryMap } from "@/src/constant/categoryMap";
 import Alert from "@mui/material/Alert";
 import ChatsComponent from "@/src/component/ChatsComponent";
+import React from "react";
+
+export default async function SubjectDetailPage({ params: { id: subjectId } }) {
+  const { data, isError } = await fetchSubjectDetail(subjectId)
+
+  return (
+    <Container maxWidth="sm" sx={{ padding: '50px' }}>
+      <BackIconButton/>
+      <SubjectDetail data={data} isError={isError}/>
+      <Divider/>
+      <ChatsComponent
+        subjectId={subjectId}
+        subjectDetailQuestion={data.question}
+        sessionId={cookies().get('SESSION')?.value}
+        csrfToken={cookies().get('XSRF-TOKEN')?.value}
+        token={cookies().get('next-auth.access-token')?.value}
+      />
+    </Container>
+  );
+}
 
 function SubjectDetail({ data, isError }) {
   if (!Object.keys(data).length === 0 || isError) return (
@@ -22,24 +42,5 @@ function SubjectDetail({ data, isError }) {
         sx={{ margin: '5px' }}
       />
     </Typography>
-  );
-}
-
-export default async function SubjectDetailPage({ params: { id: subjectId } }) {
-  const { data, isError } = await fetchSubjectDetail(subjectId)
-
-  return (
-    <Container maxWidth="sm" sx={{ padding: '50px' }}>
-      <BackIconButton/>
-      <SubjectDetail data={data} isError={isError}/>
-      <Divider/>
-      <ChatsComponent
-        subjectId={subjectId}
-        subjectDetailQuestion={subjectDetail.question}
-        sessionId={cookies().get('SESSION')?.value}
-        csrfToken={cookies().get('XSRF-TOKEN')?.value}
-      />
-
-    </Container>
   );
 }

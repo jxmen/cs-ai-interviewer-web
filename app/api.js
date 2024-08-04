@@ -2,7 +2,7 @@ import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/post
 
 const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
 
-async function fetchChats(subjectId, sessionId, csrfToken) {
+async function fetchChats(subjectId, sessionId, csrfToken, token) {
   const headers = {}
   if (csrfToken) {
     headers['X-XSRF-TOKEN'] = csrfToken;
@@ -10,8 +10,11 @@ async function fetchChats(subjectId, sessionId, csrfToken) {
   if (sessionId) {
     headers['Cookie'] = `SESSION=${sessionId}`;
   }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
-  const response = await fetch(`${SERVER_BASE_URL}/api/chat/messages?subjectId=${subjectId}`, {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v2/chat/messages?subjectId=${subjectId}`, {
     credentials: 'include',
     headers
   });
@@ -39,16 +42,21 @@ async function fetchSubjectDetail(subjectId) {
   };
 }
 
-async function fetchAnswer(subjectId, sessionId, answer, csrfToken) {
-  const headers = { 'Content-Type': 'application/json', }
+async function fetchAnswer(subjectId, sessionId, answer, csrfToken, token) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
   if (csrfToken) {
     headers['X-XSRF-TOKEN'] = csrfToken;
   }
   if (sessionId) {
     headers['Cookie'] = `SESSION=${sessionId}`;
   }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
-  const response = await fetch(`${SERVER_BASE_URL}/api/subjects/${subjectId}/answer`, {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v2/subjects/${subjectId}/answer`, {
     credentials: 'include',
     method: 'POST',
     headers,

@@ -6,7 +6,7 @@ import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/materi
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
-export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, csrfToken }) {
+export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, csrfToken, token }) {
   const [chats, setChats] = useState([])
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
@@ -15,16 +15,19 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
   const [isSubmitAnswerError, setIsSubmitAnswerError] = useState(false)
 
   useEffect(() => {
-    setIsChatLoading(true)
-    fetchChats(subjectId, sessionId, csrfToken).then(({ data, isError }) => {
+    const question = { type: "question", message: subjectDetailQuestion };
+    if (!token) {
+      setChats([question]);
+      return;
+    }
+    setIsChatLoading(true);
+    fetchChats(subjectId, sessionId, csrfToken, token).then(({ data, isError }) => {
       if (isError) {
-        console.error('Error while fetching chats')
         setIsChatLoading(false)
         setIsChatError(true)
         return
       }
 
-      const question = { type: "question", message: subjectDetailQuestion };
       if (data.length === 0) {
         setChats([question])
       } else {
@@ -61,7 +64,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
     addDummyAnswerChat(answer)
-    const { data, isError } = await fetchAnswer(subjectId, sessionId, answer, csrfToken)
+    const { data, isError } = await fetchAnswer(subjectId, sessionId, answer, csrfToken, token)
     if (isError) {
       deleteLastChat()
       setIsSubmitAnswerError(true)
@@ -107,22 +110,24 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
           })
       }
 
-      <AnswerInputFieldBox
-        isChatLoading={isChatLoading}
-        isChatLoadingError={isChatError}
-        isLoading={isSubmitAnswerLoading}
-        isError={isSubmitAnswerError}
-        submitAnswer={submitAnswer}
-      />
+      {
+        !isChatLoading && !isChatError &&
+        <>
+          <AnswerInputFieldBox
+            isLoading={isSubmitAnswerLoading}
+            isError={isSubmitAnswerError}
+            submitAnswer={submitAnswer}
+            isLoggedIn={token}
+          />
+        </>
+      }
     </>
   );
 
 }
 
-function AnswerInputFieldBox({ isChatLoading, isChatLoadingError, isLoading, isError, submitAnswer }) {
+function AnswerInputFieldBox({ isLoading, isError, submitAnswer, isLoggedIn }) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
-  if (isChatLoading) return
-  if (isChatLoadingError) return
 
   if (isLoading) {
     return (
@@ -133,6 +138,14 @@ function AnswerInputFieldBox({ isChatLoading, isChatLoadingError, isLoading, isE
   if (isError) {
     return (
       <Alert severity={"error"}> 답변 제출 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
+    )
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <>
+        <Alert severity={"info"}> 로그인이 필요합니다. </Alert>
+      </>
     )
   }
 
@@ -156,3 +169,4 @@ function AnswerInputFieldBox({ isChatLoading, isChatLoadingError, isLoading, isE
     </Box>
   );
 }
+
