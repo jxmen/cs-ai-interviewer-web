@@ -14,7 +14,7 @@ import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/post
 
 const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
-// TODO: api 호출 부분만 client component로 분리하기
+// TODO: api 호출 부분만 server component로 분리하기
 export default function Home() {
   const router = useRouter();
 
