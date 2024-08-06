@@ -2,11 +2,8 @@ import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/post
 
 const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
 
-async function fetchChats(subjectId, sessionId, csrfToken, token) {
+async function fetchChats(subjectId, sessionId, token) {
   const headers = {}
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
-  }
   if (sessionId) {
     headers['Cookie'] = `SESSION=${sessionId}`;
   }
@@ -42,13 +39,10 @@ async function fetchSubjectDetail(subjectId) {
   };
 }
 
-async function fetchAnswer(subjectId, sessionId, answer, csrfToken, token) {
+async function fetchAnswer(subjectId, sessionId, answer, token) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  if (csrfToken) {
-    headers['X-XSRF-TOKEN'] = csrfToken;
-  }
   if (sessionId) {
     headers['Cookie'] = `SESSION=${sessionId}`;
   }

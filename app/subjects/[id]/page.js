@@ -21,7 +21,6 @@ export default async function SubjectDetailPage({ params: { id: subjectId } }) {
         subjectId={subjectId}
         subjectDetailQuestion={data.question}
         sessionId={cookies().get('SESSION')?.value}
-        csrfToken={cookies().get('XSRF-TOKEN')?.value}
         token={cookies().get('next-auth.access-token')?.value}
       />
     </Container>
