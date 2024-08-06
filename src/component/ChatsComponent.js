@@ -6,6 +6,8 @@ import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/materi
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
+const CHAT_MAX_SCORE = 100;
+
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, token }) {
   const [chats, setChats] = useState([])
   const [isChatLoading, setIsChatLoading] = useState(false)
@@ -89,7 +91,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
                 <Box sx={{ padding: '5px' }}>
                   {
                     chat.type === "question" ? "질문"
-                      : typeof chat.score === "number" ? `답변 (점수: ${chat.score})`
+                      : typeof chat.score === "number" ? `답변 (점수: ${chat.score}/${CHAT_MAX_SCORE})`
                         : "답변"
                   }
                 </Box>
