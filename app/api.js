@@ -64,8 +64,36 @@ async function fetchAnswer(subjectId, sessionId, answer, token) {
   }
 }
 
+async function fetchMemberSubjects(token, category) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/member?category=${category}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  const json = await response.json();
+
+  return {
+    data: json || [],
+    isError: response.status >= 400
+  }
+}
+
+async function fetchSubjects(category) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/subjects?category=${category}`);
+  const json = await response.json();
+
+  return {
+    data: json || [],
+    isError: response.status >= 400
+  }
+
+}
+
 export {
   fetchChats,
   fetchSubjectDetail,
-  fetchAnswer
+  fetchAnswer,
+  fetchMemberSubjects,
+  fetchSubjects
 };
