@@ -113,15 +113,18 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       }
 
       {
-        !isChatLoading && !isChatError &&
-        <>
-          <AnswerInputFieldBox
-            isLoading={isSubmitAnswerLoading}
-            isError={isSubmitAnswerError}
-            submitAnswer={submitAnswer}
-            isLoggedIn={token}
-          />
-        </>
+        !isChatLoading && !isChatError && (
+          chats.length > 0 && chats[chats.length - 2].score === 100 ? `🎉 축하합니다. 다른 질문도 도전해보세요` : (
+            <>
+              <AnswerInputFieldBox
+                isLoading={isSubmitAnswerLoading}
+                isError={isSubmitAnswerError}
+                submitAnswer={submitAnswer}
+                isLoggedIn={token}
+              />
+            </>
+          )
+        )
       }
     </>
   );
