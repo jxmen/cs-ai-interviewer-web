@@ -10,18 +10,16 @@ import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
 import { CircularProgress, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
-
-const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+import { fetchMemberSubjects, fetchSubjects } from "@/app/api";
+import { getCookie } from "cookies-next";
 
 // TODO: api 호출 부분만 server component로 분리하기
 export default function Home() {
   const router = useRouter();
 
   const [tab, setTab] = useState('dsa');
-
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState([]); // [{ id, question, answer, category }
+  const [data, setData] = useState([]); // [{ id, title, category, maxScore? }
   const [isError, setIsError] = useState(false);
 
   const handleChangeTab = (event, newValue) => {
@@ -32,13 +30,23 @@ export default function Home() {
   useEffect(() => {
     setIsLoading(true);
 
-    fetch(`${SERVER_BASE_URL}/api/subjects?category=${tab}`)
-      .then(serverPromise => {
-        serverPromise.json()
-          .then(response => setData(response.data))
-          .then(_ => setIsLoading(false))
-      })
-      .catch(_ => setIsError(true));
+    const isLoggedIn = getCookie('next-auth.access-token') != null;
+    if (isLoggedIn) {
+      const token = getCookie('next-auth.access-token');
+      fetchMemberSubjects(token, tab)
+        .then(response => setData(response.data.data))
+        .catch(_ => setIsError(true))
+        .finally(() => {
+          setIsLoading(false);
+        })
+    } else {
+      fetchSubjects(tab)
+        .then(response => setData(response.data.data))
+        .catch(_ => setIsError(true))
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
   }, [tab]);
 
   const moveSubjectDetail = (subjectId) => {
@@ -64,13 +72,28 @@ export default function Home() {
           {
             (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert> :
               <List>
-                {data.map((item, index) => (
-                  <ListItem key={item.id} disablePadding={true}>
-                    <ListItemButton divider={true} onClick={() => moveSubjectDetail(item.id)}>
-                      <ListItemText primary={`${index + 1}. ${item.title}`}/>
-                    </ListItemButton>
-                  </ListItem>
-                ))}
+                {data.map((item, index) => {
+                  const isLoggedIn = getCookie('next-auth.access-token') != null;
+
+                  return (
+                    <ListItem key={item.id} disablePadding={true}>
+                      <ListItemButton divider={true} onClick={() => moveSubjectDetail(item.id)}>
+                        <ListItemText primary={`${index + 1}. ${item.title}`}/>
+                        {
+                          !isLoggedIn ? null :
+                            item.maxScore !== null ? (
+                              <Box sx={{ marginLeft: 'auto', color: getColorByScore(item.maxScore) }}>
+                                <ListItemText primary={`${item.maxScore}`}/>
+                              </Box>
+                            ) : (
+                              <Box sx={{ marginLeft: 'auto' }}>
+                                <ListItemText primary="-"/>
+                              </Box>
+                            )}
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
               </List>
           }
         </TabPanel>
@@ -79,7 +102,18 @@ export default function Home() {
   );
 }
 
-function TabPanel(props) {
+const getColorByScore = (score) => {
+  if (score <= 40) return '#d32f2f'; // Dark Red
+  if (score <= 60) return '#f57c00'; // Dark Orange
+  if (score <= 80) return '#fbc02d'; // Dark Yellow
+  if (score < 100) return '#388e3c'; // Dark Green
+
+  // Dark Sky Blue
+  return '#1976d2';
+};
+
+
+const TabPanel = (props) => {
   const { children, value, index, isLoading, isError, ...other } = props;
 
   return (
