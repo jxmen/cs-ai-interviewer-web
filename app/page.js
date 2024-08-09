@@ -9,10 +9,11 @@ import Tab from '@mui/material/Tab'
 import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
-import { CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
+import { CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { fetchMemberSubjects, fetchSubjects } from "@/app/api";
 import { getCookie } from "cookies-next";
 import InfoIcon from '@mui/icons-material/Info';
+import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 
 // TODO: api 호출 부분만 server component로 분리하기
 export default function Home() {
@@ -61,7 +62,7 @@ export default function Home() {
       </Typography>
       <Typography variant="subtitle1" gutterBottom>
         AI 면접관과 함께 CS 면접을 준비해보세요!
-        <Tooltip
+        <StyledTooltip
           title={
             <Box>
               <b>점수에 대한 기준</b><br/><br/>
@@ -72,23 +73,11 @@ export default function Home() {
               🎉 100: 매우 깊게 알고 있음
             </Box>
           }
-          componentsProps={{
-            tooltip: {
-              sx: {
-                backgroundColor: 'white',
-                color: 'black',
-                padding: '10px',
-                borderRadius: '5px',
-                boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Add shadow here
-                fontSize: '13px',
-              }
-            }
-          }}
         >
           <IconButton>
             <InfoIcon sx={{ color: '#1976d2' }}/>
           </IconButton>
-        </Tooltip>
+        </StyledTooltip>
       </Typography>
       <Tabs value={tab} onChange={handleChangeTab} aria-label="category tabs">
         <Tab label="자료구조/알고리즘" value="dsa"/>
