@@ -12,11 +12,7 @@ import React, { useEffect, useState } from "react";
 import { CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { fetchMemberSubjects, fetchSubjects } from "@/app/api";
 import { getCookie } from "cookies-next";
-<<<<<<< HEAD
-import InfoIcon from '@mui/icons-material/Info';
-=======
 import HelpCenterRoundedIcon from '@mui/icons-material/HelpCenterRounded';
->>>>>>> 6cec757688602071e40dd12f075bbe7c365acd58
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 
 // TODO: api 호출 부분만 server component로 분리하기
