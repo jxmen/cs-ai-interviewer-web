@@ -9,9 +9,10 @@ import Tab from '@mui/material/Tab'
 import Box from '@mui/material/Box'
 import Alert from "@mui/material/Alert";
 import React, { useEffect, useState } from "react";
-import { CircularProgress, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import { CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
 import { fetchMemberSubjects, fetchSubjects } from "@/app/api";
 import { getCookie } from "cookies-next";
+import InfoIcon from '@mui/icons-material/Info';
 
 // TODO: api 호출 부분만 server component로 분리하기
 export default function Home() {
@@ -60,6 +61,34 @@ export default function Home() {
       </Typography>
       <Typography variant="subtitle1" gutterBottom>
         AI 면접관과 함께 CS 면접을 준비해보세요!
+        <Tooltip
+          title={
+            <Box>
+              <b>점수에 대한 기준</b><br/><br/>
+              😞 0: 기초 부족<br/>
+              😐 10~30: 기초 수준만 알고 있음<br/>
+              🙂 40~60: 어느 정도 알고 있음<br/>
+              😃 70~90: 어느 정도 깊게 알고 있음<br/>
+              🎉 100: 매우 깊게 알고 있음
+            </Box>
+          }
+          componentsProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: 'white',
+                color: 'black',
+                padding: '10px',
+                borderRadius: '5px',
+                boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Add shadow here
+                fontSize: '13px',
+              }
+            }
+          }}
+        >
+          <IconButton>
+            <InfoIcon sx={{ color: '#1976d2' }}/>
+          </IconButton>
+        </Tooltip>
       </Typography>
       <Tabs value={tab} onChange={handleChangeTab} aria-label="category tabs">
         <Tab label="자료구조/알고리즘" value="dsa"/>
@@ -72,7 +101,7 @@ export default function Home() {
           {
             (data?.length === 0) ? <Alert severity={"info"}>데이터가 없습니다.</Alert> :
               <List>
-                {data.map((item, index) => {
+                {data?.map((item, index) => {
                   const isLoggedIn = getCookie('next-auth.access-token') != null;
 
                   return (
@@ -103,9 +132,9 @@ export default function Home() {
 }
 
 const getColorByScore = (score) => {
-  if (score < 40) return '#d32f2f'; // Dark Red
-  if (score < 60) return '#f57c00'; // Dark Orange
-  if (score < 80) return '#fbc02d'; // Dark Yellow
+  if (score === 0) return '#d32f2f'; // Dark Red
+  if (score <= 30) return '#f57c00'; // Dark Orange
+  if (score <= 60) return '#fbc02d'; // Dark Yellow
   if (score < 100) return '#388e3c'; // Dark Green
 
   // Dark Sky Blue
