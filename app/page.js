@@ -103,9 +103,9 @@ export default function Home() {
 }
 
 const getColorByScore = (score) => {
-  if (score <= 40) return '#d32f2f'; // Dark Red
-  if (score <= 60) return '#f57c00'; // Dark Orange
-  if (score <= 80) return '#fbc02d'; // Dark Yellow
+  if (score < 40) return '#d32f2f'; // Dark Red
+  if (score < 60) return '#f57c00'; // Dark Orange
+  if (score < 80) return '#fbc02d'; // Dark Yellow
   if (score < 100) return '#388e3c'; // Dark Green
 
   // Dark Sky Blue
