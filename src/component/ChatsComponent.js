@@ -90,43 +90,42 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     return { emoji: '🎉', description: '완벽해요! 축하합니다!' };
   };
 
+  const ChatItem = ({ chat, index }) => (
+    <Box key={index} sx={{ paddingTop: '10px' }}>
+      <Box sx={{ padding: '5px' }}>
+        {chat.type === "question" ? "질문" :
+          typeof chat.score === "number" ? (
+            <>
+              답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
+              <StyledTooltip title={getEmojiByScore(chat.score).description}>
+                <span>{getEmojiByScore(chat.score).emoji}</span>
+              </StyledTooltip>
+            </>
+          ) : "답변"
+        }
+      </Box>
+      <Divider/>
+      <Box sx={{ padding: '10px' }}>
+        {chat.message.split('\n').map((line, index) => (
+          <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
+            {line}
+          </Typography>
+        ))}
+      </Box>
+    </Box>
+  );
+
+  const ChatList = ({ chats, isChatError }) => (
+    isChatError ? <Alert severity={"error"}> 채팅 목록을 불러오는 중 오류가 발생했습니다.</Alert> :
+      chats?.map((chat, index) => <ChatItem key={index} chat={chat} index={index}/>)
+  );
+
+
   return (
     <>
       {
-        isChatError ? <Alert severity={"error"}> 채팅 목록을 불러오는 중 오류가 발생했습니다.</Alert> :
-          chats?.map((chat, index) => {
-            return (
-              <Box key={index} sx={{ paddingTop: '10px', }}>
-                <Box sx={{ padding: '5px' }}>
-                  {
-                    chat.type === "question" ? "질문"
-                      : typeof chat.score === "number" ? (
-                        <>
-                            답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
-                          <StyledTooltip title={getEmojiByScore(chat.score).description}>
-                            <span>{getEmojiByScore(chat.score).emoji}</span>
-                          </StyledTooltip>
-
-                        </>
-                      )
-                        : "답변"
-                  }
-                </Box>
-                <Divider/>
-                <Box sx={{ padding: '10px' }}>
-                  {
-                    chat.message.split('\n').map((line, index) => {
-                      return (
-                        <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
-                          {line}
-                        </Typography>
-                      )
-                    })
-                  }
-                </Box>
-              </Box>
-            )
-          })
+        isChatLoading ? <CircularProgress/> :
+          <ChatList chats={chats} isChatError={isChatError}/>
       }
 
       {
