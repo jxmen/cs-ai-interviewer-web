@@ -120,28 +120,27 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       chats?.map((chat, index) => <ChatItem key={index} chat={chat} index={index}/>)
   );
 
+  const renderAnswerBox = () => {
+    if (isChatLoading) return null;
+    if (isChatError) return null;
+    if (chats.length > 0 && chats[chats.length - 2]?.score === 100) {
+      return `🎉 축하합니다. 다른 질문도 도전해보세요`;
+    }
+    return (
+      <AnswerInputFieldBox
+        isLoading={isSubmitAnswerLoading}
+        isError={isSubmitAnswerError}
+        submitAnswer={submitAnswer}
+        isLoggedIn={token}
+      />
+    );
+  };
+
 
   return (
     <>
-      {
-        isChatLoading ? <CircularProgress/> :
-          <ChatList chats={chats} isChatError={isChatError}/>
-      }
-
-      {
-        !isChatLoading && !isChatError && (
-          chats.length > 0 && chats[chats.length - 2]?.score === 100 ? `🎉 축하합니다. 다른 질문도 도전해보세요` : (
-            <>
-              <AnswerInputFieldBox
-                isLoading={isSubmitAnswerLoading}
-                isError={isSubmitAnswerError}
-                submitAnswer={submitAnswer}
-                isLoggedIn={token}
-              />
-            </>
-          )
-        )
-      }
+      {isChatLoading ? <CircularProgress/> : <ChatList chats={chats} isChatError={isChatError}/>}
+      {renderAnswerBox()}
     </>
   );
 
