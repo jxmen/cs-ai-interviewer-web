@@ -90,59 +90,57 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     return { emoji: '🎉', description: '완벽해요! 축하합니다!' };
   };
 
+  const ChatItem = ({ chat, index }) => (
+    <Box key={index} sx={{ paddingTop: '10px' }}>
+      <Box sx={{ padding: '5px' }}>
+        {chat.type === "question" ? "질문" :
+          typeof chat.score === "number" ? (
+            <>
+              답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
+              <StyledTooltip title={getEmojiByScore(chat.score).description}>
+                <span>{getEmojiByScore(chat.score).emoji}</span>
+              </StyledTooltip>
+            </>
+          ) : "답변"
+        }
+      </Box>
+      <Divider/>
+      <Box sx={{ padding: '10px' }}>
+        {chat.message.split('\n').map((line, index) => (
+          <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
+            {line}
+          </Typography>
+        ))}
+      </Box>
+    </Box>
+  );
+
+  const ChatList = ({ chats, isChatError }) => (
+    isChatError ? <Alert severity={"error"}> 채팅 목록을 불러오는 중 오류가 발생했습니다.</Alert> :
+      chats?.map((chat, index) => <ChatItem key={index} chat={chat} index={index}/>)
+  );
+
+  const renderAnswerBox = () => {
+    if (isChatLoading) return null;
+    if (isChatError) return null;
+    if (chats.length > 0 && chats[chats.length - 2]?.score === 100) {
+      return `🎉 축하합니다. 다른 질문도 도전해보세요`;
+    }
+    return (
+      <AnswerInputFieldBox
+        isLoading={isSubmitAnswerLoading}
+        isError={isSubmitAnswerError}
+        submitAnswer={submitAnswer}
+        isLoggedIn={token}
+      />
+    );
+  };
+
+
   return (
     <>
-      {
-        isChatError ? <Alert severity={"error"}> 채팅 목록을 불러오는 중 오류가 발생했습니다.</Alert> :
-          chats?.map((chat, index) => {
-            return (
-              <Box key={index} sx={{ paddingTop: '10px', }}>
-                <Box sx={{ padding: '5px' }}>
-                  {
-                    chat.type === "question" ? "질문"
-                      : typeof chat.score === "number" ? (
-                        <>
-                            답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
-                          <StyledTooltip title={getEmojiByScore(chat.score).description}>
-                            <span>{getEmojiByScore(chat.score).emoji}</span>
-                          </StyledTooltip>
-
-                        </>
-                      )
-                        : "답변"
-                  }
-                </Box>
-                <Divider/>
-                <Box sx={{ padding: '10px' }}>
-                  {
-                    chat.message.split('\n').map((line, index) => {
-                      return (
-                        <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
-                          {line}
-                        </Typography>
-                      )
-                    })
-                  }
-                </Box>
-              </Box>
-            )
-          })
-      }
-
-      {
-        !isChatLoading && !isChatError && (
-          chats.length > 0 && chats[chats.length - 2]?.score === 100 ? `🎉 축하합니다. 다른 질문도 도전해보세요` : (
-            <>
-              <AnswerInputFieldBox
-                isLoading={isSubmitAnswerLoading}
-                isError={isSubmitAnswerError}
-                submitAnswer={submitAnswer}
-                isLoggedIn={token}
-              />
-            </>
-          )
-        )
-      }
+      {isChatLoading ? <CircularProgress/> : <ChatList chats={chats} isChatError={isChatError}/>}
+      {renderAnswerBox()}
     </>
   );
 

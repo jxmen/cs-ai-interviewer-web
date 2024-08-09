@@ -12,7 +12,11 @@ import React, { useEffect, useState } from "react";
 import { CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { fetchMemberSubjects, fetchSubjects } from "@/app/api";
 import { getCookie } from "cookies-next";
+<<<<<<< HEAD
 import InfoIcon from '@mui/icons-material/Info';
+=======
+import HelpCenterRoundedIcon from '@mui/icons-material/HelpCenterRounded';
+>>>>>>> 6cec757688602071e40dd12f075bbe7c365acd58
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 
 // TODO: api 호출 부분만 server component로 분리하기
@@ -60,12 +64,14 @@ export default function Home() {
       <Typography variant="h4" component="h1" gutterBottom>
         CS 면접 대비 - AI 면접관
       </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        AI 면접관과 함께 CS 면접을 준비해보세요!
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography variant="subtitle1">
+          AI 면접관과 함께 CS 면접을 준비해보세요!
+        </Typography>
         <StyledTooltip
           title={
             <Box>
-              <b>점수에 대한 기준</b><br/><br/>
+              <b>점수 기준</b><br/><br/>
               😞 0: 기초 부족<br/>
               😐 10~30: 기초 수준만 알고 있음<br/>
               🙂 40~60: 어느 정도 알고 있음<br/>
@@ -74,11 +80,11 @@ export default function Home() {
             </Box>
           }
         >
-          <IconButton>
-            <InfoIcon sx={{ color: '#1976d2' }}/>
+          <IconButton sx={{ padding: '5px' }}>
+            <HelpCenterRoundedIcon/>
           </IconButton>
         </StyledTooltip>
-      </Typography>
+      </Box>
       <Tabs value={tab} onChange={handleChangeTab} aria-label="category tabs">
         <Tab label="자료구조/알고리즘" value="dsa"/>
         <Tab label="데이터베이스" value="database"/>
