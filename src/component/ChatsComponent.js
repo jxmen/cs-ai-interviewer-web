@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { fetchAnswer, fetchChats } from "@/app/api";
 import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 
 const CHAT_MAX_SCORE = 100;
 
@@ -81,6 +82,14 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     addQuestionChat(data.nextQuestion)
   }
 
+  const getEmojiByScore = (score) => {
+    if (score === 0) return { emoji: '😞', description: '기초를 다지는 중이에요! 조금만 더 힘내봐요!' };
+    if (score <= 30) return { emoji: '😐', description: '기초를 잘 다지고 있어요! 계속해서 노력해봐요!' };
+    if (score <= 60) return { emoji: '🙂', description: '좋아요! 이제 더 깊이 공부해봐요!' };
+    if (score < 100) return { emoji: '😃', description: '훌륭해요! 거의 다 왔어요!' };
+    return { emoji: '🎉', description: '완벽해요! 축하합니다!' };
+  };
+
   return (
     <>
       {
@@ -91,7 +100,15 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
                 <Box sx={{ padding: '5px' }}>
                   {
                     chat.type === "question" ? "질문"
-                      : typeof chat.score === "number" ? `답변 (점수: ${chat.score}/${CHAT_MAX_SCORE})`
+                      : typeof chat.score === "number" ? (
+                        <>
+                            답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
+                          <StyledTooltip title={getEmojiByScore(chat.score).description}>
+                            <span>{getEmojiByScore(chat.score).emoji}</span>
+                          </StyledTooltip>
+
+                        </>
+                      )
                         : "답변"
                   }
                 </Box>
