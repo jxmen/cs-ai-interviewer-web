@@ -12,7 +12,7 @@ const MAX_ANSWER_COUNT = 10
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, token }) {
   const [chats, setChats] = useState([])
-  const [isChatLoading, setIsChatLoading] = useState(false)
+  const [isChatLoading, setIsChatLoading] = useState(true)
   const [isChatError, setIsChatError] = useState(false)
 
   const [isSubmitAnswerLoading, setIsSubmitAnswerLoading] = useState(false)
@@ -24,7 +24,6 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       setChats([question]);
       return;
     }
-    setIsChatLoading(true);
     fetchChats(subjectId, sessionId, token).then(({ data, isError }) => {
       if (isError) {
         setIsChatLoading(false)
@@ -141,7 +140,9 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
   return (
     <>
-      {isChatLoading ? <CircularProgress/> : <ChatList chats={chats} isChatError={isChatError}/>}
+      {isChatLoading ?
+        <Box sx={{ padding: '10px' }}> 채팅 데이터 불러오는 중... ⏳ </Box>
+        : <ChatList chats={chats} isChatError={isChatError}/>}
       {renderAnswerBox()}
     </>
   );
@@ -153,7 +154,11 @@ function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLogged
 
   if (isLoading) {
     return (
-      <Box> <CircularProgress/> 답변 제출 중... </Box>
+      <Box sx={{
+        padding: '10px',
+        display: 'flex',
+        alignItems: 'center',
+      }}> <CircularProgress sx={{ paddingRight: '10px' }}/> 답변 제출 중...⏳ </Box>
     );
   }
 
