@@ -12,7 +12,7 @@ const MAX_ANSWER_COUNT = 10
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, token }) {
   const [chats, setChats] = useState([])
-  const [isChatLoading, setIsChatLoading] = useState(true)
+  const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
 
   const [isSubmitAnswerLoading, setIsSubmitAnswerLoading] = useState(false)
@@ -24,6 +24,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       setChats([question]);
       return;
     }
+
     fetchChats(subjectId, sessionId, token).then(({ data, isError }) => {
       if (isError) {
         setIsChatLoading(false)
