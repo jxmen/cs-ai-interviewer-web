@@ -171,6 +171,17 @@ function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLogged
     )
   }
 
+  const answerChats = chats.filter(it => it.type === "answer")
+  if (answerChats.length >= MAX_ANSWER_COUNT) {
+    return (
+      <Alert severity="info">
+        답변 제출 한도에 도달했어요!
+        <br/>
+        더 나은 경험을 위해 초기화 기능을 준비 중입니다. 조금만 기다려 주세요! ✨
+      </Alert>
+    )
+  }
+
   return (
     <Box>
       <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline
@@ -184,7 +195,7 @@ function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLogged
         paddingTop: '10px'
       }}>
         <Box sx={{ paddingRight: '10px' }}>
-          제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
+          제출한 답변 횟수: {answerChats?.length ?? 0} / {MAX_ANSWER_COUNT}
         </Box>
         <Button variant="contained"
           onClick={submitAnswer}
