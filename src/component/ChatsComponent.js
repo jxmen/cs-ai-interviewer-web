@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 
 const CHAT_MAX_SCORE = 100;
+const MAX_ANSWER_COUNT = 10
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, token }) {
   const [chats, setChats] = useState([])
@@ -130,6 +131,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       <AnswerInputFieldBox
         isLoading={isSubmitAnswerLoading}
         isError={isSubmitAnswerError}
+        chats={chats}
         submitAnswer={submitAnswer}
         isLoggedIn={token}
       />
@@ -146,7 +148,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
 }
 
-function AnswerInputFieldBox({ isLoading, isError, submitAnswer, isLoggedIn }) {
+function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLoggedIn }) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
 
   if (isLoading) {
@@ -178,8 +180,12 @@ function AnswerInputFieldBox({ isLoading, isError, submitAnswer, isLoggedIn }) {
       <Box sx={{
         display: 'flex',
         justifyContent: 'flex-end',
+        alignItems: 'center',
         paddingTop: '10px'
       }}>
+        <Box sx={{ paddingRight: '10px' }}>
+          제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
+        </Box>
         <Button variant="contained"
           onClick={submitAnswer}
           disabled={isLoading || isAnswerEmpty}>제출하기
