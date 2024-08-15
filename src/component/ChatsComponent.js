@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { fetchAnswerV2, fetchAnswerV3, fetchChats, fetchSubjectChatArchive } from "@/app/api";
+import { fetchAnswerV3, fetchChats, fetchSubjectChatArchive } from "@/app/api";
 import {
   Alert,
   Button,
@@ -20,7 +20,7 @@ import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 const CHAT_MAX_SCORE = 100;
 const MAX_ANSWER_COUNT = 10;
 
-export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, token }) {
+export default function ChatsComponent({ subjectId, subjectDetailQuestion, token }) {
   const [chats, setChats] = useState([])
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
@@ -31,8 +31,6 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
   const [isChatArchivingError, setIsChatArchivingError] = useState(false)
   const [isOpenClearChatDialog, setIsOpenClearChatDialog] = useState(false);
 
-  const [answerApiVersion, setAnswerApiVersion] = useState(3)
-
   useEffect(() => {
     const question = { type: "question", message: subjectDetailQuestion };
     if (!token) {
@@ -40,7 +38,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       return;
     }
 
-    fetchChats(subjectId, sessionId, token).then(({ data, isError }) => {
+    fetchChats(subjectId, token).then(({ data, isError }) => {
       if (isError) {
         setIsChatLoading(false)
         setIsChatError(true)
@@ -49,20 +47,11 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
       if (data.length === 0) {
         setChats([question])
-        return
-      }
-
-      /**
-       * NOTE: 레거시 답변 제출 API에서는 채팅 내역에 answer부터 저장되어, answer부터 시작할 경우 더미 질문을 추가한다.
-       */
-      if (data[0].type === "answer") {
-        setAnswerApiVersion(2)
-        setChats([question, ...data])
       } else {
         setChats([...data])
       }
     }).finally(() => setIsChatLoading(false))
-  }, [subjectId, subjectDetailQuestion, sessionId]);
+  }, [subjectId, subjectDetailQuestion]);
 
   const addAnswerChat = (score, message, createdAt) => {
     setChats((prevChats) => [...prevChats, { type: "answer", message, score, createdAt }])
@@ -91,19 +80,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
     addDummyAnswerChat(answer)
-
-    let data;
-    let isError;
-    if (answerApiVersion === 2) {
-      const fetchResponse = await fetchAnswerV2(subjectId, sessionId, answer, token)
-      data = fetchResponse.data
-      isError = fetchResponse.isError
-    } else {
-      const fetchResponse = await fetchAnswerV3(subjectId, sessionId, answer, token)
-      data = fetchResponse.data
-      isError = fetchResponse.isError
-    }
-
+    const { data, isError } = await fetchAnswerV3(subjectId, token, answer)
     if (isError) {
       deleteLastChat()
       setIsSubmitAnswerError(true)

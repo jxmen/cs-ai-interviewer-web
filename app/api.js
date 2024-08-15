@@ -2,11 +2,8 @@ import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/post
 
 const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
 
-async function fetchChats(subjectId, sessionId, token) {
+async function fetchChats(subjectId, token) {
   const headers = {}
-  if (sessionId) {
-    headers['Cookie'] = `SESSION=${sessionId}`;
-  }
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -39,46 +36,14 @@ async function fetchSubjectDetail(subjectId) {
   };
 }
 
-async function fetchAnswerV2(subjectId, sessionId, answer, token) {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-  if (sessionId) {
-    headers['Cookie'] = `SESSION=${sessionId}`;
-  }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${SERVER_BASE_URL}/api/v2/subjects/${subjectId}/answer`, {
-    credentials: 'include',
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ answer })
-  });
-
-  const json = await response.json();
-  return {
-    data: json,
-    isError: response.status >= 400
-  }
-}
-
-async function fetchAnswerV3(subjectId, sessionId, answer, token) {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-  if (sessionId) {
-    headers['Cookie'] = `SESSION=${sessionId}`;
-  }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
+async function fetchAnswerV3(subjectId, token, answer) {
   const response = await fetch(`${SERVER_BASE_URL}/api/v3/subjects/${subjectId}/answer`, {
     credentials: 'include',
     method: 'POST',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({ answer })
   });
 
@@ -128,7 +93,6 @@ async function fetchSubjectChatArchive(subjectId, token) {
 export {
   fetchChats,
   fetchSubjectDetail,
-  fetchAnswerV2,
   fetchAnswerV3,
   fetchMemberSubjects,
   fetchSubjects,
