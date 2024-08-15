@@ -37,6 +37,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
       if (data.length === 0) {
         setChats([question])
       } else {
+        // TODO: API에서 처음에 question도 저장되도록 변경되면 이 부분도 수정해야 함
         setChats([question, ...data])
       }
       setIsChatLoading(false)
@@ -93,19 +94,39 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     return { emoji: '🎉', description: '완벽해요! 축하합니다!' };
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   const ChatItem = ({ chat, index }) => (
     <Box key={index} sx={{ paddingTop: '10px' }}>
-      <Box sx={{ padding: '5px' }}>
-        {chat.type === "question" ? "질문" :
-          typeof chat.score === "number" ? (
-            <>
-              답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
-              <StyledTooltip title={getEmojiByScore(chat.score).description}>
-                <span>{getEmojiByScore(chat.score).emoji}</span>
-              </StyledTooltip>
-            </>
-          ) : "답변"
-        }
+      <Box sx={{ padding: '5px', display: 'flex', justifyContent: 'space-between' }}>
+        <Box>
+          {chat.type === "question" ? "질문" :
+            typeof chat.score === "number" ? (
+              <>
+                답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
+                <StyledTooltip title={getEmojiByScore(chat.score).description}>
+                  <span>{getEmojiByScore(chat.score).emoji}</span>
+                </StyledTooltip>
+              </>
+            ) : "답변"
+          }
+        </Box>
+        {chat.type === "answer" && (
+          <Box>
+            <Typography variant="caption" sx={{ color: 'gray' }}>
+              {formatDate(chat.createdAt)}
+            </Typography>
+          </Box>
+        )}
       </Box>
       <Divider/>
       <Box sx={{ padding: '10px' }}>
@@ -189,6 +210,10 @@ function AnswerInputFieldBox({
     </Button>
   );
 
+  const hasNotAnswer = () => {
+    const answerChats = chats.filter(it => it.type === "answer");
+    return answerChats.length >= MAX_ANSWER_COUNT;
+  }
   if (isLoading) {
     return (
       <Box sx={{
@@ -198,13 +223,11 @@ function AnswerInputFieldBox({
       }}> <CircularProgress sx={{ paddingRight: '10px' }}/> 답변 제출 중...⏳ </Box>
     );
   }
-
   if (isError) {
     return (
       <Alert severity={"error"}> 답변 제출 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
     )
   }
-
   if (!isLoggedIn) {
     return (
       <>
@@ -212,7 +235,6 @@ function AnswerInputFieldBox({
       </>
     )
   }
-
   if (isChatArchiving) {
     return (
       <Box sx={{
@@ -222,15 +244,12 @@ function AnswerInputFieldBox({
       }}> <CircularProgress sx={{ paddingRight: '10px' }}/> 채팅 초기화 중...⏳ </Box>
     );
   }
-
   if (isChatArchivingError) {
     return (
       <Alert severity={"error"}> 채팅 초기화 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
     )
   }
-
-  const answerChats = chats.filter(it => it.type === "answer")
-  if (answerChats.length >= MAX_ANSWER_COUNT) {
+  if (hasNotAnswer()) {
     return (
       <>
         <Divider/>
@@ -263,7 +282,7 @@ function AnswerInputFieldBox({
         <ClearButton onClick={archiveChat} disabled={chats.length <= 1}/>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{ paddingRight: '10px' }}>
-            제출한 답변 횟수: {answerChats?.length ?? 0} / {MAX_ANSWER_COUNT}
+            제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
           </Box>
           <Button variant="contained"
             onClick={submitAnswer}
