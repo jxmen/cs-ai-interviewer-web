@@ -50,7 +50,7 @@ async function fetchAnswer(subjectId, sessionId, answer, token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${SERVER_BASE_URL}/api/v2/subjects/${subjectId}/answer`, {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v3/subjects/${subjectId}/answer`, {
     credentials: 'include',
     method: 'POST',
     headers,

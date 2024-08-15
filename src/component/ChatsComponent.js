@@ -36,12 +36,18 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
       if (data.length === 0) {
         setChats([question])
-      } else {
-        // TODO: API에서 처음에 question도 저장되도록 변경되면 이 부분도 수정해야 함
-        setChats([question, ...data])
+        return
       }
-      setIsChatLoading(false)
-    })
+
+      /**
+       * NOTE: 레거시 답변 제출 API에서는 채팅 내역에 answer부터 저장되어, answer부터 시작할 경우 더미 질문을 추가한다.
+       */
+      if (data[0].type === "answer") {
+        setChats([question, ...data])
+      } else {
+        setChats([...data])
+      }
+    }).finally(() => setIsChatLoading(false))
   }, [subjectId, subjectDetailQuestion, sessionId]);
 
   const addAnswerChat = (score, message) => {
