@@ -20,7 +20,6 @@ export default async function SubjectDetailPage({ params: { id: subjectId } }) {
       <ChatsComponent
         subjectId={subjectId}
         subjectDetailQuestion={data.question}
-        sessionId={cookies().get('SESSION')?.value}
         token={cookies().get('next-auth.access-token')?.value}
       />
     </Container>
