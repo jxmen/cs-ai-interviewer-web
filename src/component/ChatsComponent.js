@@ -2,7 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAnswerV2, fetchAnswerV3, fetchChats, fetchSubjectChatArchive } from "@/app/api";
-import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/material";
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  TextField
+} from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
@@ -19,6 +29,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
   const [isSubmitAnswerError, setIsSubmitAnswerError] = useState(false)
   const [isChatArchiving, setIsChatArchiving] = useState(false)
   const [isChatArchivingError, setIsChatArchivingError] = useState(false)
+  const [isOpenClearChatDialog, setIsOpenClearChatDialog] = useState(false);
 
   const [answerApiVersion, setAnswerApiVersion] = useState(3)
 
@@ -180,7 +191,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
         chats={chats}
         submitAnswer={submitAnswer}
         isLoggedIn={token}
-        archiveChat={archiveChat}
+        openClearChatDialog={openClearChatDialog}
         isChatArchiving={isChatArchiving}
         isChatArchivingError={isChatArchivingError}
       />
@@ -202,12 +213,40 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     });
   }
 
+  const openClearChatDialog = () => {
+    setIsOpenClearChatDialog(true);
+  }
+
+  const closeClearChatDialog = () => {
+    setIsOpenClearChatDialog(false);
+  }
+
+  const handleConfirmClearChat = () => {
+    closeClearChatDialog();
+    archiveChat();
+  };
+
   return (
     <>
       {isChatLoading ?
         <Box sx={{ padding: '10px' }}> 채팅 데이터 불러오는 중... ⏳ </Box>
         : <ChatList chats={chats} isChatError={isChatError}/>}
       {renderAnswerBox()}
+      <Dialog open={isOpenClearChatDialog} onClose={!isOpenClearChatDialog}>
+        <DialogTitle>채팅 초기화</DialogTitle>
+        <DialogContent>
+          <Typography>정말로 채팅 내용을 초기화 하시겠습니까?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeClearChatDialog} color="primary">
+            취소
+          </Button>
+          <Button onClick={handleConfirmClearChat} color="secondary">
+            확인
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </>
   );
 
@@ -219,16 +258,41 @@ function AnswerInputFieldBox({
   chats,
   submitAnswer,
   isLoggedIn,
-  archiveChat,
+  openClearChatDialog,
   isChatArchiving,
   isChatArchivingError
 }) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
 
-  const ClearButton = ({ onClick, disabled }) => (
-    <Button variant="outlined" color="secondary" onClick={onClick} disabled={disabled}>
+  const ClearButton = ({ disabled }) => (
+    <Box
+      sx={{
+        display: 'inline-block',
+        padding: '6px 16px',
+        border: '1px solid',
+        borderColor: 'secondary.main',
+        color: 'secondary.main',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
+        fontSize: '0.875rem',
+        lineHeight: 1.75,
+        minWidth: '64px',
+        textAlign: 'center',
+        transition: 'box-shadow 0.3s ease-in-out',
+        '&:hover': {
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+        },
+        '&:active': {
+          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
+        },
+      }}
+      onClick={openClearChatDialog}
+      tabIndex={-1}
+    >
       채팅 초기화
-    </Button>
+    </Box>
   );
 
   const hasNotAnswer = () => {
@@ -241,7 +305,7 @@ function AnswerInputFieldBox({
         padding: '10px',
         display: 'flex',
         alignItems: 'center',
-      }}> <CircularProgress sx={{ paddingRight: '10px' }}/> 답변 제출 중...⏳ </Box>
+      }}> <CircularProgress sx={{ padding: '10px' }}/> 답변 제출 중...⏳ </Box>
     );
   }
   if (isError) {
@@ -262,7 +326,7 @@ function AnswerInputFieldBox({
         padding: '10px',
         display: 'flex',
         alignItems: 'center',
-      }}> <CircularProgress sx={{ paddingRight: '10px' }}/> 채팅 초기화 중...⏳ </Box>
+      }}> <CircularProgress sx={{ padding: '10px' }}/> 채팅 초기화 중...⏳ </Box>
     );
   }
   if (isChatArchivingError) {
@@ -282,7 +346,7 @@ function AnswerInputFieldBox({
           display: 'flex',
           alignItems: 'center',
         }}>
-          <ClearButton onClick={archiveChat} disabled={false}/>
+          <ClearButton disabled={false}/>
         </Box>
       </>
     )
@@ -300,7 +364,7 @@ function AnswerInputFieldBox({
         alignItems: 'center',
         paddingTop: '10px'
       }}>
-        <ClearButton onClick={archiveChat} disabled={chats.length <= 1}/>
+        <ClearButton disabled={chats.length <= 1}/>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{ paddingRight: '10px' }}>
             제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
