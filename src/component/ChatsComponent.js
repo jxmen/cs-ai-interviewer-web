@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { fetchAnswer, fetchChats } from "@/app/api";
+import { fetchAnswer, fetchChats, fetchSubjectChatArchive } from "@/app/api";
 import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 
 const CHAT_MAX_SCORE = 100;
-const MAX_ANSWER_COUNT = 10
+const MAX_ANSWER_COUNT = 10;
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessionId, token }) {
   const [chats, setChats] = useState([])
@@ -17,6 +17,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
   const [isSubmitAnswerLoading, setIsSubmitAnswerLoading] = useState(false)
   const [isSubmitAnswerError, setIsSubmitAnswerError] = useState(false)
+  const [isChatArchiving, setIsChatArchiving] = useState(false)
+  const [isChatArchivingError, setIsChatArchivingError] = useState(false)
 
   useEffect(() => {
     const question = { type: "question", message: subjectDetailQuestion };
@@ -122,11 +124,13 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
   );
 
   const renderAnswerBox = () => {
-    if (isChatLoading) return null;
-    if (isChatError) return null;
-    if (chats.length > 0 && chats[chats.length - 2]?.score === 100) {
+    if (isChatLoading || isChatError) return null;
+
+    const lastAnswerChat = chats[chats.length - 2];
+    if (lastAnswerChat?.score === 100) {
       return `🎉 축하합니다. 다른 질문도 도전해보세요`;
     }
+
     return (
       <AnswerInputFieldBox
         isLoading={isSubmitAnswerLoading}
@@ -134,10 +138,27 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
         chats={chats}
         submitAnswer={submitAnswer}
         isLoggedIn={token}
+        archiveChat={archiveChat}
+        isChatArchiving={isChatArchiving}
+        isChatArchivingError={isChatArchivingError}
       />
     );
   };
 
+  const archiveChat = () => {
+    setIsChatArchiving(true)
+    fetchSubjectChatArchive(subjectId, token).then(({ success }) => {
+      if (!success) {
+        setIsChatArchivingError(true)
+        return
+      }
+
+      setChats([])
+      addQuestionChat(subjectDetailQuestion)
+    }).finally(() => {
+      setIsChatArchiving(false)
+    });
+  }
 
   return (
     <>
@@ -150,8 +171,23 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
 }
 
-function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLoggedIn }) {
+function AnswerInputFieldBox({
+  isLoading,
+  isError,
+  chats,
+  submitAnswer,
+  isLoggedIn,
+  archiveChat,
+  isChatArchiving,
+  isChatArchivingError
+}) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
+
+  const ClearButton = ({ onClick, disabled }) => (
+    <Button variant="outlined" color="secondary" onClick={onClick} disabled={disabled}>
+      채팅 초기화
+    </Button>
+  );
 
   if (isLoading) {
     return (
@@ -177,14 +213,38 @@ function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLogged
     )
   }
 
+  if (isChatArchiving) {
+    return (
+      <Box sx={{
+        padding: '10px',
+        display: 'flex',
+        alignItems: 'center',
+      }}> <CircularProgress sx={{ paddingRight: '10px' }}/> 채팅 초기화 중...⏳ </Box>
+    );
+  }
+
+  if (isChatArchivingError) {
+    return (
+      <Alert severity={"error"}> 채팅 초기화 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
+    )
+  }
+
   const answerChats = chats.filter(it => it.type === "answer")
   if (answerChats.length >= MAX_ANSWER_COUNT) {
     return (
-      <Alert severity="info">
-        답변 제출 한도에 도달했어요!
-        <br/>
-        더 나은 경험을 위해 초기화 기능을 준비 중입니다. 조금만 기다려 주세요! ✨
-      </Alert>
+      <>
+        <Divider/>
+        <Box sx={{ paddingTop: '10px' }}>
+          🔥 답변 제출 한도에 도달했어요! 초기화하거나 다른 질문에 도전해보세요!
+        </Box>
+        <Box sx={{
+          paddingTop: '10px',
+          display: 'flex',
+          alignItems: 'center',
+        }}>
+          <ClearButton onClick={archiveChat} disabled={false}/>
+        </Box>
+      </>
     )
   }
 
@@ -196,20 +256,21 @@ function AnswerInputFieldBox({ isLoading, isError, chats, submitAnswer, isLogged
         }}/>
       <Box sx={{
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         alignItems: 'center',
         paddingTop: '10px'
       }}>
-        <Box sx={{ paddingRight: '10px' }}>
-          제출한 답변 횟수: {answerChats?.length ?? 0} / {MAX_ANSWER_COUNT}
+        <ClearButton onClick={archiveChat} disabled={chats.length <= 1}/>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ paddingRight: '10px' }}>
+            제출한 답변 횟수: {answerChats?.length ?? 0} / {MAX_ANSWER_COUNT}
+          </Box>
+          <Button variant="contained"
+            onClick={submitAnswer}
+            disabled={isLoading || isAnswerEmpty}>제출하기
+          </Button>
         </Box>
-        <Button variant="contained"
-          onClick={submitAnswer}
-          disabled={isLoading || isAnswerEmpty}>제출하기
-        </Button>
-      </Box>
-
-    </Box>
+      </Box> </Box>
   );
 }
 
