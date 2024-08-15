@@ -87,7 +87,17 @@ async function fetchSubjects(category) {
     data: json || [],
     isError: response.status >= 400
   }
+}
 
+async function fetchSubjectChatArchive(subjectId, token) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/${subjectId}/chats/archive`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  return await response.json()
 }
 
 export {
@@ -95,5 +105,6 @@ export {
   fetchSubjectDetail,
   fetchAnswer,
   fetchMemberSubjects,
-  fetchSubjects
+  fetchSubjects,
+  fetchSubjectChatArchive
 };
