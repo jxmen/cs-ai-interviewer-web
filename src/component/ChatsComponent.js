@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { fetchAnswer, fetchChats, fetchSubjectChatArchive } from "@/app/api";
+import { fetchAnswerV2, fetchAnswerV3, fetchChats, fetchSubjectChatArchive } from "@/app/api";
 import { Alert, Button, CircularProgress, Divider, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -19,6 +19,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
   const [isSubmitAnswerError, setIsSubmitAnswerError] = useState(false)
   const [isChatArchiving, setIsChatArchiving] = useState(false)
   const [isChatArchivingError, setIsChatArchivingError] = useState(false)
+
+  const [answerApiVersion, setAnswerApiVersion] = useState(3)
 
   useEffect(() => {
     const question = { type: "question", message: subjectDetailQuestion };
@@ -43,6 +45,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
        * NOTE: 레거시 답변 제출 API에서는 채팅 내역에 answer부터 저장되어, answer부터 시작할 경우 더미 질문을 추가한다.
        */
       if (data[0].type === "answer") {
+        setAnswerApiVersion(2)
         setChats([question, ...data])
       } else {
         setChats([...data])
@@ -50,8 +53,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
     }).finally(() => setIsChatLoading(false))
   }, [subjectId, subjectDetailQuestion, sessionId]);
 
-  const addAnswerChat = (score, message) => {
-    setChats((prevChats) => [...prevChats, { type: "answer", message, score }])
+  const addAnswerChat = (score, message, createdAt) => {
+    setChats((prevChats) => [...prevChats, { type: "answer", message, score, createdAt }])
   }
   const addQuestionChat = (message) => {
     setChats((prevChats) => [...prevChats, { type: "question", message }])
@@ -77,7 +80,19 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
     addDummyAnswerChat(answer)
-    const { data, isError } = await fetchAnswer(subjectId, sessionId, answer, token)
+
+    let data;
+    let isError;
+    if (answerApiVersion === 2) {
+      const fetchResponse = await fetchAnswerV2(subjectId, sessionId, answer, token)
+      data = fetchResponse.data
+      isError = fetchResponse.isError
+    } else {
+      const fetchResponse = await fetchAnswerV3(subjectId, sessionId, answer, token)
+      data = fetchResponse.data
+      isError = fetchResponse.isError
+    }
+
     if (isError) {
       deleteLastChat()
       setIsSubmitAnswerError(true)
@@ -86,7 +101,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
 
     // 기존 더미 답변을 지우고 점수가 매겨진 새로운 답변으로 데이터를 추가한다.
     deleteLastChat()
-    addAnswerChat(data.score, answer)
+    addAnswerChat(data.score, answer, data.createdAt)
 
     // 꼬리 질문을 추가한다.
     addQuestionChat(data.nextQuestion)
@@ -126,7 +141,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, sessi
             ) : "답변"
           }
         </Box>
-        {chat.type === "answer" && (
+        {chat.type === "answer" && chat.createdAt && (
           <Box>
             <Typography variant="caption" sx={{ color: 'gray' }}>
               {formatDate(chat.createdAt)}
