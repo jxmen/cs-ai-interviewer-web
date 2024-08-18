@@ -2,20 +2,17 @@
 
 import { Button } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { deleteCookie } from "cookies-next";
 
 export default function LogoutButton() {
   const router = useRouter();
 
-  const handleLogout = () => {
-    deleteCookie('next-auth.access-token');
-    router.refresh();
-  };
-
   return (
     <Button
       variant="contained"
-      onClick={handleLogout}
+      onClick={async () => {
+        await fetch('/api/logout', { method: 'POST' })
+        router.refresh()
+      }}
       sx={{
         backgroundColor: '#fff',
         color: '#4285F4',

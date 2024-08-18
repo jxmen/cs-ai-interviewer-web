@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { fetchAnswerV3, fetchChats, fetchSubjectChatArchive } from "@/app/api";
+import { fetchAnswer, fetchChats, fetchSubjectChatArchive } from "@/app/api";
 import {
   Alert,
   Button,
@@ -20,7 +20,7 @@ import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 const CHAT_MAX_SCORE = 100;
 const MAX_ANSWER_COUNT = 10;
 
-export default function ChatsComponent({ subjectId, subjectDetailQuestion, token }) {
+export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLoggedIn }) {
   const [chats, setChats] = useState([])
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
@@ -33,13 +33,13 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, token
 
   useEffect(() => {
     const question = { type: "question", message: subjectDetailQuestion };
-    if (!token) {
+    if (!isLoggedIn) {
       setChats([question]);
       return;
     }
 
-    fetchChats(subjectId, token).then(({ data, isError }) => {
-      if (isError) {
+    fetchChats(subjectId).then(({ data, error }) => {
+      if (error) {
         setIsChatLoading(false)
         setIsChatError(true)
         return
@@ -80,8 +80,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, token
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
     addDummyAnswerChat(answer)
-    const { data, isError } = await fetchAnswerV3(subjectId, token, answer)
-    if (isError) {
+    const { data, error } = await fetchAnswer(subjectId, answer)
+    if (error) {
       deleteLastChat()
       setIsSubmitAnswerError(true)
       return
@@ -167,17 +167,17 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, token
         isError={isSubmitAnswerError}
         chats={chats}
         submitAnswer={submitAnswer}
-        isLoggedIn={token}
         openClearChatDialog={openClearChatDialog}
         isChatArchiving={isChatArchiving}
         isChatArchivingError={isChatArchivingError}
+        isLoggedIn={isLoggedIn}
       />
     );
   };
 
   const archiveChat = () => {
     setIsChatArchiving(true)
-    fetchSubjectChatArchive(subjectId, token).then(({ success }) => {
+    fetchSubjectChatArchive(subjectId).then(({ success }) => {
       if (!success) {
         setIsChatArchivingError(true)
         return
@@ -234,10 +234,10 @@ function AnswerInputFieldBox({
   isError,
   chats,
   submitAnswer,
-  isLoggedIn,
   openClearChatDialog,
   isChatArchiving,
-  isChatArchivingError
+  isChatArchivingError,
+  isLoggedIn
 }) {
   const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
 
