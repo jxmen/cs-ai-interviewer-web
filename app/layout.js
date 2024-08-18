@@ -13,7 +13,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const isLoggedIn = !!cookies().get('next-auth.access-token');
+  const isLoggedIn = cookies().has('SESSION');
 
   return (
     <html lang="ko">

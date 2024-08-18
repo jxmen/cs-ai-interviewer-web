@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { fetchSubjectDetail } from "@/app/api";
 import Container from "@mui/material/Container";
 import BackIconButton from "@/src/component/BackIconButton";
@@ -8,9 +7,12 @@ import { categoryMap } from "@/src/constant/categoryMap";
 import Alert from "@mui/material/Alert";
 import ChatsComponent from "@/src/component/ChatsComponent";
 import React from "react";
+import { cookies } from "next/headers";
+
 
 export default async function SubjectDetailPage({ params: { id: subjectId } }) {
   const { data, isError } = await fetchSubjectDetail(subjectId)
+  const isLoggedIn = cookies().has('SESSION');
 
   return (
     <Container maxWidth="sm" sx={{ padding: '50px' }}>
@@ -20,7 +22,7 @@ export default async function SubjectDetailPage({ params: { id: subjectId } }) {
       <ChatsComponent
         subjectId={subjectId}
         subjectDetailQuestion={data.question}
-        token={cookies().get('next-auth.access-token')?.value}
+        isLoggedIn={isLoggedIn}
       />
     </Container>
   );

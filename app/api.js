@@ -1,90 +1,50 @@
-import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
+import { SERVER_BASE_URL } from "@/src/constant/urls";
 
-const SERVER_BASE_URL = process.env.NEXT_PUBLIC_SERVER_BASE_URL
-
-async function fetchChats(subjectId, token) {
-  const headers = {}
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${SERVER_BASE_URL}/api/v2/chat/messages?subjectId=${subjectId}`, {
+async function fetchChats(subjectId) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/${subjectId}/chats`, {
     credentials: 'include',
-    headers
   });
 
-  const json = await response.json();
-  return {
-    data: json.data || [],
-    isError: response.status >= 400
-  }
+  return await response.json()
 }
 
 async function fetchSubjectDetail(subjectId) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/subjects/${subjectId}`);
-  if (!response.ok) {
-    return {
-      data: null,
-      isError: true
-    };
-  }
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/${subjectId}`);
 
-  const data = await response.json();
-  return {
-    data: data,
-    isError: false
-  };
+  return await response.json()
 }
 
-async function fetchAnswerV3(subjectId, token, answer) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/v3/subjects/${subjectId}/answer`, {
+
+async function fetchAnswer(subjectId, answer) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v4/subjects/${subjectId}/answer`, {
     credentials: 'include',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({ answer })
   });
 
-  const json = await response.json();
-  return {
-    data: json,
-    isError: response.status >= 400
-  }
+  return await response.json()
 }
 
-async function fetchMemberSubjects(token, category) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/member?category=${category}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+async function fetchMySubjects(category) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/my?category=${category}`, {
+    credentials: 'include',
   });
 
-  const json = await response.json();
-
-  return {
-    data: json || [],
-    isError: response.status >= 400
-  }
+  return await response.json()
 }
 
 async function fetchSubjects(category) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/subjects?category=${category}`);
-  const json = await response.json();
-
-  return {
-    data: json || [],
-    isError: response.status >= 400
-  }
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects?category=${category}`);
+  return await response.json()
 }
 
-async function fetchSubjectChatArchive(subjectId, token) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/${subjectId}/chats/archive`, {
+async function fetchSubjectChatArchive(subjectId) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v2/subjects/${subjectId}/chats/archive`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+    credentials: 'include',
   });
 
   return await response.json()
@@ -93,8 +53,8 @@ async function fetchSubjectChatArchive(subjectId, token) {
 export {
   fetchChats,
   fetchSubjectDetail,
-  fetchAnswerV3,
-  fetchMemberSubjects,
+  fetchAnswer,
   fetchSubjects,
-  fetchSubjectChatArchive
+  fetchSubjectChatArchive,
+  fetchMySubjects,
 };
