@@ -16,11 +16,15 @@ import {
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
+import { fetchLogOut } from "@/app/api/local-apis";
+import { useRouter } from "next/navigation";
 
 const CHAT_MAX_SCORE = 100;
 const MAX_ANSWER_COUNT = 10;
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLoggedIn }) {
+  const router = useRouter()
+
   const [chats, setChats] = useState([])
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
@@ -40,6 +44,16 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
 
     fetchChats(subjectId).then(({ data, error }) => {
       if (error) {
+        if (error.code === "REQUIRE_LOGIN") {
+          return new Promise((resolve) => {
+            fetchLogOut().then(() => {
+              router.refresh()
+              setChats([question]);
+              resolve()
+            })
+          });
+        }
+
         setIsChatLoading(false)
         setIsChatError(true)
         return

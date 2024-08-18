@@ -12,6 +12,7 @@ import HelpCenterRoundedIcon from "@mui/icons-material/HelpCenterRounded";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Alert from "@mui/material/Alert";
+import { fetchLogOut } from "@/app/api/local-apis";
 
 export default function HomeComponent({ isLoggedIn }) {
   const router = useRouter();
@@ -30,7 +31,22 @@ export default function HomeComponent({ isLoggedIn }) {
     setIsLoading(true);
     if (isLoggedIn) {
       fetchMySubjects(tab)
-        .then(json => setData(json.data))
+        .then(res => {
+          if (res.error) {
+            if (res.error.code === "REQUIRE_LOGIN") {
+              return new Promise((resolve) => {
+                fetchLogOut().then(() => {
+                  router.push(`/?tab=${tab}`)
+                  resolve()
+                })
+              });
+            }
+
+            setIsError(true)
+          }
+
+          setData(res.data)
+        })
         .catch(_ => setIsError(true))
         .finally(() => {
           setIsLoading(false);
