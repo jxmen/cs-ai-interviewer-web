@@ -35,58 +35,63 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
   const [isChatArchivingError, setIsChatArchivingError] = useState(false)
   const [isOpenClearChatDialog, setIsOpenClearChatDialog] = useState(false);
 
+  const firstDummyQuestion = { type: "question", message: subjectDetailQuestion };
+
+  const logout = async () => {
+    await fetchLogOut();
+    setChats([firstDummyQuestion]);
+    router.refresh();
+  }
+
   useEffect(() => {
-    const question = { type: "question", message: subjectDetailQuestion };
     if (!isLoggedIn) {
-      setChats([question]);
+      setChats([firstDummyQuestion]);
       return;
     }
 
-    fetchChats(subjectId).then(({ data, error }) => {
-      if (error) {
-        if (error.code === "REQUIRE_LOGIN") {
-          return new Promise((resolve) => {
-            fetchLogOut().then(() => {
-              router.refresh()
-              setChats([question]);
-              resolve()
-            })
-          });
-        }
-
-        setIsChatLoading(false)
-        setIsChatError(true)
-        return
-      }
+    fetchChats(subjectId).then(async ({ data, error }) => {
+      if (error) throw error
 
       if (data.length === 0) {
-        setChats([question])
+        setChats([firstDummyQuestion])
       } else {
         setChats([...data])
       }
-    }).finally(() => setIsChatLoading(false))
+    })
+      .catch(async (e) => {
+        if (e.code === "REQUIRE_LOGIN") await logout();
+
+        setIsChatLoading(false)
+        setIsChatError(true)
+      })
+      .finally(() => setIsChatLoading(false))
   }, [subjectId, subjectDetailQuestion]);
 
   const addAnswerChat = (score, message, createdAt) => {
     setChats((prevChats) => [...prevChats, { type: "answer", message, score, createdAt }])
   }
+
   const addQuestionChat = (message) => {
     setChats((prevChats) => [...prevChats, { type: "question", message }])
   }
+
   /**
    * 점수가 없는 빈 답변을 추가한다.
    */
   const addDummyAnswerChat = (message) => {
     setChats((prevChats) => [...prevChats, { type: "answer", message }])
   }
+
   const deleteLastChat = () => {
     setChats((prevChats) => prevChats.slice(0, -1))
   }
+
   const submitAnswer = async () => {
     setIsSubmitAnswerLoading(true)
     await _submitAnswer()
-    setIsSubmitAnswerLoading(false)
+      .finally(() => setIsSubmitAnswerLoading(false))
   }
+
   const _submitAnswer = async () => {
     const answerElement = document.getElementById('answer')
     const answer = answerElement.value
@@ -96,6 +101,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
     addDummyAnswerChat(answer)
     const { data, error } = await fetchAnswer(subjectId, answer)
     if (error) {
+      if (error.code === "REQUIRE_LOGIN") return await logout()
+
       deleteLastChat()
       setIsSubmitAnswerError(true)
       return
