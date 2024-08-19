@@ -1,9 +1,9 @@
 import React from "react";
 import HomeComponent from "@/src/component/HomeComponent";
-import { cookies } from "next/headers";
+import { fetchIsLoggedIn } from "@/app/api/local-apis";
 
-export default function Home() {
-  const isLoggedIn = cookies().has('SESSION');
+export default async function Home() {
+  const isLoggedIn = await fetchIsLoggedIn().isLoggedIn;
 
   return (
     <HomeComponent isLoggedIn={isLoggedIn}/>

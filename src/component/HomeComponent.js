@@ -12,54 +12,63 @@ import HelpCenterRoundedIcon from "@mui/icons-material/HelpCenterRounded";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Alert from "@mui/material/Alert";
-import { fetchLogOut } from "@/app/api/local-apis";
+import { fetchIsLoggedIn, fetchLogOut } from "@/app/api/local-apis";
 
-export default function HomeComponent({ isLoggedIn }) {
+export default function HomeComponent() {
   const router = useRouter();
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [tab, setTab] = useState('dsa');
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState([]); // [{ id, title, category, maxScore? }
   const [isError, setIsError] = useState(false);
 
+  const handleRequireLogin = async (tab) => {
+    await fetchLogOut();
+    await fetchSubjects(tab)
+      .then(json => setData(json.data))
+      .catch(_ => setIsError(true))
+
+    setIsLoggedIn(false);
+    router.refresh();
+  };
+
+  const loadSubjects = async (isLoggedIn, tab) => {
+    setIsLoading(true);
+    try {
+      if (isLoggedIn) {
+        const res = await fetchMySubjects(tab);
+        if (res.error) {
+          throw res.error;
+        }
+        setData(res.data);
+      } else {
+        const json = await fetchSubjects(tab);
+        setData(json.data);
+      }
+    } catch (e) {
+      if (e.code === "REQUIRE_LOGIN") {
+        await handleRequireLogin(tab);
+      } else {
+        setIsError(true);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIsLoggedIn().then(json => {
+      setIsLoggedIn(json.isLoggedIn);
+      loadSubjects(json.isLoggedIn, tab);
+    });
+  }, [tab]);
+
   const handleChangeTab = (event, newValue) => {
     router.push(`/?tab=${newValue}`);
     setTab(newValue)
   };
-
-  useEffect(() => {
-    setIsLoading(true);
-    if (isLoggedIn) {
-      fetchMySubjects(tab)
-        .then(res => {
-          if (res.error) {
-            if (res.error.code === "REQUIRE_LOGIN") {
-              return new Promise((resolve) => {
-                fetchLogOut().then(() => {
-                  router.push(`/?tab=${tab}`)
-                  resolve()
-                })
-              });
-            }
-
-            setIsError(true)
-          }
-
-          setData(res.data)
-        })
-        .catch(_ => setIsError(true))
-        .finally(() => {
-          setIsLoading(false);
-        })
-    } else {
-      fetchSubjects(tab)
-        .then(json => setData(json.data))
-        .catch(_ => setIsError(true))
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, [isLoggedIn, tab]);
 
   const moveSubjectDetail = (subjectId) => {
     router.push(`/subjects/${subjectId}`)
