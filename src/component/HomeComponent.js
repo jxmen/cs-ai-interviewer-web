@@ -12,12 +12,10 @@ import HelpCenterRoundedIcon from "@mui/icons-material/HelpCenterRounded";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Alert from "@mui/material/Alert";
-import { fetchIsLoggedIn, fetchLogOut } from "@/app/api/local-apis";
+import { fetchLogOut } from "@/app/api/local-apis";
 
-export default function HomeComponent() {
+export default function HomeComponent({ isLoggedIn }) {
   const router = useRouter();
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [tab, setTab] = useState('dsa');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,19 +28,17 @@ export default function HomeComponent() {
       .then(json => setData(json.data))
       .catch(_ => setIsError(true))
 
-    setIsLoggedIn(false);
     router.refresh();
   };
 
-  const loadSubjects = async (isLoggedIn, tab) => {
+  const loadSubjects = async (tab) => {
     setIsLoading(true);
     try {
       if (isLoggedIn) {
-        const res = await fetchMySubjects(tab);
-        if (res.error) {
-          throw res.error;
-        }
-        setData(res.data);
+        const json = await fetchMySubjects(tab);
+        if (json.error) throw json.error
+
+        setData(json.data);
       } else {
         const json = await fetchSubjects(tab);
         setData(json.data);
@@ -59,10 +55,7 @@ export default function HomeComponent() {
   };
 
   useEffect(() => {
-    fetchIsLoggedIn().then(json => {
-      setIsLoggedIn(json.isLoggedIn);
-      loadSubjects(json.isLoggedIn, tab);
-    });
+    loadSubjects(tab)
   }, [tab]);
 
   const handleChangeTab = (event, newValue) => {
