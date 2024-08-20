@@ -1,19 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { SERVER_BASE_URL } from "@/src/constant/urls";
 import { Button } from "@mui/material";
 import Image from "next/image";
 import googleIconImage from "@/public/google.png";
-import Link from "next/link";
 
-import { SERVER_BASE_URL } from "@/src/constant/urls";
-import { useEffect } from "react";
-
-export default function GoogleLoginButton() {
-  useEffect(() => {
-    // session값을 쿠키에 저장하기 위해 API를 호출한다.
-    fetch(`${SERVER_BASE_URL}/api/v1/session-id`);
-  }, []);
-
+export function GoogleLoginButton() {
   return (
     <Link href={`${SERVER_BASE_URL}/oauth2/authorization/google`}>
       <Button
