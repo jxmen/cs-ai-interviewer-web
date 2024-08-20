@@ -179,7 +179,72 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
       chats?.map((chat, index) => <ChatItem key={index} chat={chat} index={index}/>)
   );
 
+  const ClearButton = ({ disabled }) => (
+    <Box
+      sx={{
+        display: 'inline-block',
+        padding: '6px 16px',
+        border: '1px solid',
+        borderColor: 'secondary.main',
+        color: 'secondary.main',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
+        fontSize: '0.875rem',
+        lineHeight: 1.75,
+        minWidth: '64px',
+        textAlign: 'center',
+        transition: 'box-shadow 0.3s ease-in-out',
+        '&:hover': {
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+        },
+        '&:active': {
+          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
+        },
+      }}
+      onClick={openClearChatDialog}
+      tabIndex={-1}
+    >
+      채팅 초기화
+    </Box>
+  );
+
+  const AnswerInputFieldBox = () => {
+    const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
+
+    return (
+      <Box>
+        <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline
+          onChange={(e) => {
+            setIsAnswerEmpty(e.target.value.trim() === "")
+          }}/>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '10px'
+        }}>
+          <ClearButton disabled={chats.length <= 1}/>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ paddingRight: '10px' }}>
+              제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
+            </Box>
+            <Button variant="contained"
+              onClick={submitAnswer}
+              disabled={isSubmitAnswerLoading || isAnswerEmpty}>제출하기
+            </Button>
+          </Box>
+        </Box> </Box>
+    );
+  };
+
   const renderAnswerBox = () => {
+    const hasNotAnswer = () => {
+      const answerChats = chats.filter(it => it.type === "answer");
+      return answerChats.length >= MAX_ANSWER_COUNT;
+    }
+
     if (isChatLoading || isChatError) return null;
 
     const lastAnswerChat = chats[chats.length - 2];
@@ -187,17 +252,66 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
       return `🎉 축하합니다. 다른 질문도 도전해보세요`;
     }
 
+    if (isSubmitAnswerLoading) {
+      return (
+        <Box sx={{
+          padding: '10px',
+          display: 'flex',
+          alignItems: 'center',
+        }}> <CircularProgress sx={{ padding: '10px' }}/> 답변 제출 중...⏳ </Box>
+      );
+    }
+
+    if (isSubmitAnswerError) {
+      return (
+        <Alert severity={"error"}> 답변 제출 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
+      )
+    }
+
+    if (!isLoggedIn) {
+      return (
+        <>
+          <Alert severity={"info"}> 로그인이 필요합니다. </Alert>
+        </>
+      )
+    }
+
+    if (isChatArchiving) {
+      return (
+        <Box sx={{
+          padding: '10px',
+          display: 'flex',
+          alignItems: 'center',
+        }}> <CircularProgress sx={{ padding: '10px' }}/> 채팅 초기화 중...⏳ </Box>
+      );
+    }
+
+    if (isChatArchivingError) {
+      return (
+        <Alert severity={"error"}> 채팅 초기화 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
+      )
+    }
+
+    if (hasNotAnswer()) {
+      return (
+        <>
+          <Divider/>
+          <Box sx={{ paddingTop: '10px' }}>
+            🔥 답변 제출 한도에 도달했어요! 초기화하거나 다른 질문에 도전해보세요!
+          </Box>
+          <Box sx={{
+            paddingTop: '10px',
+            display: 'flex',
+            alignItems: 'center',
+          }}>
+            <ClearButton disabled={false}/>
+          </Box>
+        </>
+      )
+    }
+
     return (
-      <AnswerInputFieldBox
-        isLoading={isSubmitAnswerLoading}
-        isError={isSubmitAnswerError}
-        chats={chats}
-        submitAnswer={submitAnswer}
-        openClearChatDialog={openClearChatDialog}
-        isChatArchiving={isChatArchiving}
-        isChatArchivingError={isChatArchivingError}
-        isLoggedIn={isLoggedIn}
-      />
+      <AnswerInputFieldBox/>
     );
   };
 
@@ -254,130 +368,3 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
   );
 
 }
-
-function AnswerInputFieldBox({
-  isLoading,
-  isError,
-  chats,
-  submitAnswer,
-  openClearChatDialog,
-  isChatArchiving,
-  isChatArchivingError,
-  isLoggedIn
-}) {
-  const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
-
-  const ClearButton = ({ disabled }) => (
-    <Box
-      sx={{
-        display: 'inline-block',
-        padding: '6px 16px',
-        border: '1px solid',
-        borderColor: 'secondary.main',
-        color: 'secondary.main',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? 'none' : 'auto',
-        fontSize: '0.875rem',
-        lineHeight: 1.75,
-        minWidth: '64px',
-        textAlign: 'center',
-        transition: 'box-shadow 0.3s ease-in-out',
-        '&:hover': {
-          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
-        },
-        '&:active': {
-          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
-        },
-      }}
-      onClick={openClearChatDialog}
-      tabIndex={-1}
-    >
-      채팅 초기화
-    </Box>
-  );
-
-  const hasNotAnswer = () => {
-    const answerChats = chats.filter(it => it.type === "answer");
-    return answerChats.length >= MAX_ANSWER_COUNT;
-  }
-  if (isLoading) {
-    return (
-      <Box sx={{
-        padding: '10px',
-        display: 'flex',
-        alignItems: 'center',
-      }}> <CircularProgress sx={{ padding: '10px' }}/> 답변 제출 중...⏳ </Box>
-    );
-  }
-  if (isError) {
-    return (
-      <Alert severity={"error"}> 답변 제출 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
-    )
-  }
-  if (!isLoggedIn) {
-    return (
-      <>
-        <Alert severity={"info"}> 로그인이 필요합니다. </Alert>
-      </>
-    )
-  }
-  if (isChatArchiving) {
-    return (
-      <Box sx={{
-        padding: '10px',
-        display: 'flex',
-        alignItems: 'center',
-      }}> <CircularProgress sx={{ padding: '10px' }}/> 채팅 초기화 중...⏳ </Box>
-    );
-  }
-  if (isChatArchivingError) {
-    return (
-      <Alert severity={"error"}> 채팅 초기화 중 오류가 발생했습니다. 다시 시도해주세요.</Alert>
-    )
-  }
-  if (hasNotAnswer()) {
-    return (
-      <>
-        <Divider/>
-        <Box sx={{ paddingTop: '10px' }}>
-          🔥 답변 제출 한도에 도달했어요! 초기화하거나 다른 질문에 도전해보세요!
-        </Box>
-        <Box sx={{
-          paddingTop: '10px',
-          display: 'flex',
-          alignItems: 'center',
-        }}>
-          <ClearButton disabled={false}/>
-        </Box>
-      </>
-    )
-  }
-
-  return (
-    <Box>
-      <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline
-        onChange={(e) => {
-          setIsAnswerEmpty(e.target.value.trim() === "")
-        }}/>
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingTop: '10px'
-      }}>
-        <ClearButton disabled={chats.length <= 1}/>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ paddingRight: '10px' }}>
-            제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
-          </Box>
-          <Button variant="contained"
-            onClick={submitAnswer}
-            disabled={isLoading || isAnswerEmpty}>제출하기
-          </Button>
-        </Box>
-      </Box> </Box>
-  );
-}
-
