@@ -1,33 +1,27 @@
+"use client"
+
 import { Inter } from "next/font/google";
-import { AppBar, Toolbar } from "@mui/material";
-import GoogleLoginButton from "@/src/component/GoogleLoginButton";
-import LogoutButton from "@/src/component/LogoutButton";
+import { AppBar } from "@mui/material";
 import Container from "@mui/material/Container";
-import { cookies } from "next/headers";
+import TokenHandler from "@/src/utils/TokenHandler";
+import RootLayOutToolBar from "@/src/component/RootLayoutToolBar";
+import { AuthProvider } from "@/src/context/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "CS 면접 대비 - AI 면접관",
-  description: "AI 면접관과 함께 CS 면접을 준비해보세요!",
-};
-
 export default function RootLayout({ children }) {
-  const isLoggedIn = cookies().has('SESSION');
-
   return (
     <html lang="ko">
       <body className={inter.className}>
-        <>
+        <AuthProvider>
+          <TokenHandler/>
           <AppBar position="static" sx={{ backgroundColor: '#fff', boxShadow: 'none' }}>
-            <Toolbar sx={{ padding: 0, justifyContent: 'flex-end' }}>
-              {isLoggedIn ? <LogoutButton/> : <GoogleLoginButton/>}
-            </Toolbar>
+            <RootLayOutToolBar/>
           </AppBar>
           <Container maxWidth="lg" sx={{ paddingTop: '20px' }}>
             {children}
           </Container>
-        </>
+        </AuthProvider>
       </body>
     </html>
   );

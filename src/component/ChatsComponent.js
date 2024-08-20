@@ -16,13 +16,17 @@ import {
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
-import { fetchLogOut } from "@/app/api/local-apis";
 import { useRouter } from "next/navigation";
+import LocalStorage from "@/src/utils/LocalStorage";
+import { useAuth } from "@/src/context/AuthContext";
 
 const CHAT_MAX_SCORE = 100;
 const MAX_ANSWER_COUNT = 10;
 
-export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLoggedIn }) {
+export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
+  const { isLoggedIn, setIsLoggedIn } = useAuth();
+  const accessToken = LocalStorage.getItem('accessToken');
+
   const router = useRouter()
 
   const [chats, setChats] = useState([])
@@ -38,7 +42,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
   const firstDummyQuestion = { type: "question", message: subjectDetailQuestion };
 
   const logout = async () => {
-    await fetchLogOut();
+    LocalStorage.logout()
+    setIsLoggedIn(false)
     setChats([firstDummyQuestion]);
     router.refresh();
   }
@@ -49,7 +54,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
       return;
     }
 
-    fetchChats(subjectId).then(async ({ data, error }) => {
+    fetchChats(subjectId, accessToken).then(async ({ data, error }) => {
       if (error) throw error
 
       if (data.length === 0) {
@@ -65,7 +70,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
         setIsChatError(true)
       })
       .finally(() => setIsChatLoading(false))
-  }, [subjectId, subjectDetailQuestion]);
+  }, [subjectId, subjectDetailQuestion, isLoggedIn]);
 
   const addAnswerChat = (score, message, createdAt) => {
     setChats((prevChats) => [...prevChats, { type: "answer", message, score, createdAt }])
@@ -99,7 +104,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
     addDummyAnswerChat(answer)
-    const { data, error } = await fetchAnswer(subjectId, answer)
+    const { data, error } = await fetchAnswer(subjectId, answer, accessToken)
     if (error) {
       if (error.code === "REQUIRE_LOGIN") return await logout()
 
@@ -198,7 +203,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion, isLog
 
   const archiveChat = () => {
     setIsChatArchiving(true)
-    fetchSubjectChatArchive(subjectId).then(({ success }) => {
+    fetchSubjectChatArchive(subjectId, accessToken).then(({ success }) => {
       if (!success) {
         setIsChatArchivingError(true)
         return

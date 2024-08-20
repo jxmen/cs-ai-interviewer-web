@@ -1,9 +1,7 @@
 import { SERVER_BASE_URL } from "@/src/constant/urls";
 
-async function fetchChats(subjectId) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/${subjectId}/chats`, {
-    credentials: 'include',
-  });
+async function fetchSubjects(category) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects?category=${category}`);
 
   return await response.json()
 }
@@ -14,13 +12,22 @@ async function fetchSubjectDetail(subjectId) {
   return await response.json()
 }
 
+async function fetchChats(subjectId, accessToken) {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/${subjectId}/chats`, {
+    headers: {
+      "Authorization": `Bearer ${accessToken}`
+    }
+  });
 
-async function fetchAnswer(subjectId, answer) {
+  return await response.json()
+}
+
+async function fetchAnswer(subjectId, answer, accessToken) {
   const response = await fetch(`${SERVER_BASE_URL}/api/v4/subjects/${subjectId}/answer`, {
-    credentials: 'include',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
     },
     body: JSON.stringify({ answer })
   });
@@ -28,23 +35,22 @@ async function fetchAnswer(subjectId, answer) {
   return await response.json()
 }
 
-async function fetchMySubjects(category) {
+async function fetchMySubjects(category, accessToken) {
   const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/my?category=${category}`, {
-    credentials: 'include',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    }
   });
 
   return await response.json()
 }
 
-async function fetchSubjects(category) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects?category=${category}`);
-  return await response.json()
-}
-
-async function fetchSubjectChatArchive(subjectId) {
+async function fetchSubjectChatArchive(subjectId, accessToken) {
   const response = await fetch(`${SERVER_BASE_URL}/api/v2/subjects/${subjectId}/chats/archive`, {
     method: 'POST',
-    credentials: 'include',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    }
   });
 
   return await response.json()

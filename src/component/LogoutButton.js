@@ -1,16 +1,28 @@
-"use client"
+"use client";
 
-import { Button } from "@mui/material";
+import { useAuth } from "@/src/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { Button } from "@mui/material";
+import LocalStorage from "@/src/utils/LocalStorage";
 
-export default function LogoutButton() {
+function removeUrlParameters() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('accessToken');
+  url.searchParams.delete('refreshToken');
+  window.history.replaceState({}, document.title, url.pathname + url.search);
+}
+
+export function LogoutButton() {
+  const { setIsLoggedIn } = useAuth();
   const router = useRouter();
 
   return (
     <Button
       variant="contained"
-      onClick={async () => {
-        await fetch('/api/logout', { method: 'POST' })
+      onClick={() => {
+        LocalStorage.logout()
+        setIsLoggedIn(false)
+        removeUrlParameters()
         router.refresh()
       }}
       sx={{
