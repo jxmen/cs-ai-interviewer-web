@@ -91,35 +91,40 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
     setChats((prevChats) => prevChats.slice(0, -1))
   }
 
-  const submitAnswer = async () => {
-    setIsSubmitAnswerLoading(true)
-    await _submitAnswer()
-      .finally(() => setIsSubmitAnswerLoading(false))
-  }
+  const withLoading = (setLoadingState, fn) => async (...args) => {
+    setLoadingState(true);
+    try {
+      await fn(...args);
+    } finally {
+      setLoadingState(false);
+    }
+  };
 
-  const _submitAnswer = async () => {
-    const answerElement = document.getElementById('answer')
-    const answer = answerElement.value
-    answerElement.value = ""
+  const submitAnswer = async () => {
+    const answerElement = document.getElementById('answer');
+    const answer = answerElement.value;
+    answerElement.value = "";
 
     // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
-    addDummyAnswerChat(answer)
-    const { data, error } = await fetchAnswer(subjectId, answer, accessToken)
+    addDummyAnswerChat(answer);
+    const { data, error } = await fetchAnswer(subjectId, answer, accessToken);
     if (error) {
-      if (error.code === "REQUIRE_LOGIN") return await logout()
+      if (error.code === "REQUIRE_LOGIN") return await logout();
 
-      deleteLastChat()
-      setIsSubmitAnswerError(true)
-      return
+      deleteLastChat();
+      setIsSubmitAnswerError(true);
+      return;
     }
 
     // 기존 더미 답변을 지우고 점수가 매겨진 새로운 답변으로 데이터를 추가한다.
-    deleteLastChat()
-    addAnswerChat(data.score, answer, data.createdAt)
+    deleteLastChat();
+    addAnswerChat(data.score, answer, data.createdAt);
 
     // 꼬리 질문을 추가한다.
-    addQuestionChat(data.nextQuestion)
-  }
+    addQuestionChat(data.nextQuestion);
+  };
+
+  const submitAnswerWithLoading = withLoading(setIsSubmitAnswerLoading, submitAnswer);
 
   const getEmojiByScore = (score) => {
     if (score === 0) return { emoji: '😞', description: '기초를 다지는 중이에요! 조금만 더 힘내봐요!' };
@@ -231,7 +236,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
               제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
             </Box>
             <Button variant="contained"
-              onClick={submitAnswer}
+              onClick={submitAnswerWithLoading}
               disabled={isSubmitAnswerLoading || isAnswerEmpty}>제출하기
             </Button>
           </Box>
