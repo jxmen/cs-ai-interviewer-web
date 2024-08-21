@@ -22,19 +22,6 @@ async function fetchChats(subjectId, accessToken) {
   return await response.json()
 }
 
-async function fetchAnswer(subjectId, answer, accessToken) {
-  const response = await fetch(`${SERVER_BASE_URL}/api/v4/subjects/${subjectId}/answer`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
-    },
-    body: JSON.stringify({ answer })
-  });
-
-  return await response.json()
-}
-
 async function fetchMySubjects(category, accessToken) {
   const response = await fetch(`${SERVER_BASE_URL}/api/v1/subjects/my?category=${category}`, {
     headers: {
@@ -59,7 +46,6 @@ async function fetchSubjectChatArchive(subjectId, accessToken) {
 export {
   fetchChats,
   fetchSubjectDetail,
-  fetchAnswer,
   fetchSubjects,
   fetchSubjectChatArchive,
   fetchMySubjects,

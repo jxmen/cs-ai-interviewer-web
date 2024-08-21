@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { fetchMySubjects, fetchSubjects } from "@/app/api";
+import { fetchMySubjects, fetchSubjects } from "@/src/api";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
