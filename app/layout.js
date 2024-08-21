@@ -1,13 +1,16 @@
 "use client"
 
 import { Inter } from "next/font/google";
+import dynamic from 'next/dynamic'
+
 import { AppBar } from "@mui/material";
 import Container from "@mui/material/Container";
-import TokenHandler from "@/src/utils/TokenHandler";
-import RootLayOutToolBar from "@/src/component/RootLayoutToolBar";
 import { AuthProvider } from "@/src/context/AuthContext";
+import TokenHandler from "@/src/utils/TokenHandler";
 
 const inter = Inter({ subsets: ["latin"] });
+
+const RootLayOutToolBar = dynamic(() => import('../src/component/RootLayoutToolBar'), { ssr: false })
 
 export default function RootLayout({ children }) {
   return (
@@ -15,8 +18,8 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <AuthProvider>
           <TokenHandler/>
+          <RootLayOutToolBar/>
           <AppBar position="static" sx={{ backgroundColor: '#fff', boxShadow: 'none' }}>
-            <RootLayOutToolBar/>
           </AppBar>
           <Container maxWidth="lg" sx={{ paddingTop: '20px' }}>
             {children}
