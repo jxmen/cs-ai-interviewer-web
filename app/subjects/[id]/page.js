@@ -1,4 +1,4 @@
-import { fetchSubjectDetail } from "@/app/api";
+import { fetchSubjectDetail } from "@/src/api";
 import Container from "@mui/material/Container";
 import BackIconButton from "@/src/component/BackIconButton";
 import { Chip, Divider } from "@mui/material";

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { fetchAnswer, fetchChats, fetchSubjectChatArchive } from "@/app/api";
+import { fetchChats, fetchSubjectChatArchive } from "@/src/api";
 import {
   Alert,
   Button,
@@ -19,9 +19,12 @@ import { StyledTooltip } from "@/src/component/Tooltip/StyledTooltip";
 import { useRouter } from "next/navigation";
 import LocalStorage from "@/src/utils/LocalStorage";
 import { useAuth } from "@/src/context/AuthContext";
+import { getAnswerEventSource } from "@/src/event-sources";
 
 const CHAT_MAX_SCORE = 100;
 const MAX_ANSWER_COUNT = 10;
+
+const DUMMY_LOADING_QUESTION_MESSAGE = "답변을 분석 중입니다. 잠시만 기다려주세요.";
 
 export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
   const { isLoggedIn, setIsLoggedIn } = useAuth();
@@ -33,20 +36,17 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [isChatError, setIsChatError] = useState(false)
 
+  // submit answer
   const [isSubmitAnswerLoading, setIsSubmitAnswerLoading] = useState(false)
+  const [isSubmitSaving, setIsSubmitSaving] = useState(false)
   const [isSubmitAnswerError, setIsSubmitAnswerError] = useState(false)
+
+  // chat archive
   const [isChatArchiving, setIsChatArchiving] = useState(false)
   const [isChatArchivingError, setIsChatArchivingError] = useState(false)
   const [isOpenClearChatDialog, setIsOpenClearChatDialog] = useState(false);
 
   const firstDummyQuestion = { type: "question", message: subjectDetailQuestion };
-
-  const logout = async () => {
-    LocalStorage.logout()
-    setIsLoggedIn(false)
-    setChats([firstDummyQuestion]);
-    router.refresh();
-  }
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -64,7 +64,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
       }
     })
       .catch(async (e) => {
-        if (e.code === "REQUIRE_LOGIN") await logout();
+        if (e.code === "REQUIRE_LOGIN") return logout()
 
         setIsChatLoading(false)
         setIsChatError(true)
@@ -72,8 +72,11 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
       .finally(() => setIsChatLoading(false))
   }, [subjectId, subjectDetailQuestion, isLoggedIn]);
 
-  const addAnswerChat = (score, message, createdAt) => {
-    setChats((prevChats) => [...prevChats, { type: "answer", message, score, createdAt }])
+  const logout = () => {
+    LocalStorage.logout()
+    setIsLoggedIn(false)
+    setChats([firstDummyQuestion]);
+    router.refresh();
   }
 
   const addQuestionChat = (message) => {
@@ -81,103 +84,162 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
   }
 
   /**
-   * 점수가 없는 빈 답변을 추가한다.
+   * 점수/생성일이 없는 빈 답변을 추가한다.
    */
   const addDummyAnswerChat = (message) => {
     setChats((prevChats) => [...prevChats, { type: "answer", message }])
   }
 
-  const deleteLastChat = () => {
-    setChats((prevChats) => prevChats.slice(0, -1))
+  /**
+   * 답변을 분석 중임을 나타내는 더미 질문을 추가한다.
+   */
+  const addDummyLoadingQuestionChat = () => {
+    setChats((prevChats) => [
+      ...prevChats,
+      {
+        type: "question",
+        message: DUMMY_LOADING_QUESTION_MESSAGE
+      }
+    ]);
   }
-
-  const withLoading = (setLoadingState, fn) => async (...args) => {
-    setLoadingState(true);
-    try {
-      await fn(...args);
-    } finally {
-      setLoadingState(false);
-    }
-  };
 
   const submitAnswer = async () => {
     const answerElement = document.getElementById('answer');
     const answer = answerElement.value;
     answerElement.value = "";
 
-    // 우선 제공한 내용을 기반으로 스코어가 없는 더미 답변을 생성한다.
-    addDummyAnswerChat(answer);
-    const { data, error } = await fetchAnswer(subjectId, answer, accessToken);
-    if (error) {
-      if (error.code === "REQUIRE_LOGIN") return await logout();
+    addDummyAnswerChat(answer) // 점수/생성일이 없는 더미 답변을 추가한다.
+    addDummyLoadingQuestionChat() // NOTE: 이 값은 서버에서 받는 데이터로 계속 변경해야 한다.
+    const eventSource = getAnswerEventSource(subjectId, answer, accessToken);
 
-      deleteLastChat();
-      setIsSubmitAnswerError(true);
-      return;
-    }
+    let fetchChatsTimeoutId, loadingTimeoutId;
+    eventSource.addEventListener('message', (event) => {
+      const setLoadingTimeoutId = () => {
+        return setTimeout(() => {
+          setIsSubmitAnswerLoading(false)
+          setIsSubmitSaving(true)
+        }, 500);
+      }
 
-    // 기존 더미 답변을 지우고 점수가 매겨진 새로운 답변으로 데이터를 추가한다.
-    deleteLastChat();
-    addAnswerChat(data.score, answer, data.createdAt);
+      const setFetchChatsTimeoutId = () => {
+        return setTimeout(async () => {
+          eventSource.close();
+          setIsSubmitSaving(false)
+          try {
+            const { data, error } = await fetchChats(subjectId, accessToken);
+            if (error) throw error;
 
-    // 꼬리 질문을 추가한다.
-    addQuestionChat(data.nextQuestion);
-  };
+            setChats(data);
+          } catch (e) {
+            if (e.code === "REQUIRE_LOGIN") return logout()
 
-  const submitAnswerWithLoading = withLoading(setIsSubmitAnswerLoading, submitAnswer);
-
-  const getEmojiByScore = (score) => {
-    if (score === 0) return { emoji: '😞', description: '기초를 다지는 중이에요! 조금만 더 힘내봐요!' };
-    if (score <= 30) return { emoji: '😐', description: '기초를 잘 다지고 있어요! 계속해서 노력해봐요!' };
-    if (score <= 60) return { emoji: '🙂', description: '좋아요! 이제 더 깊이 공부해봐요!' };
-    if (score < 100) return { emoji: '😃', description: '훌륭해요! 거의 다 왔어요!' };
-    return { emoji: '🎉', description: '완벽해요! 축하합니다!' };
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
-  };
-
-  const ChatItem = ({ chat, index }) => (
-    <Box key={index} sx={{ paddingTop: '10px' }}>
-      <Box sx={{ padding: '5px', display: 'flex', justifyContent: 'space-between' }}>
-        <Box>
-          {chat.type === "question" ? "질문" :
-            typeof chat.score === "number" ? (
-              <>
-                답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
-                <StyledTooltip title={getEmojiByScore(chat.score).description}>
-                  <span>{getEmojiByScore(chat.score).emoji}</span>
-                </StyledTooltip>
-              </>
-            ) : "답변"
+            setIsSubmitAnswerError(true);
           }
-        </Box>
-        {chat.type === "answer" && chat.createdAt && (
+        }, 2000);
+      }
+
+      const content = JSON.parse(event.data).result?.output.content;
+      if (!content) {
+        // Set a timeout to check if a new message is received
+        clearTimeout(fetchChatsTimeoutId);
+        clearTimeout(loadingTimeoutId);
+        fetchChatsTimeoutId = setFetchChatsTimeoutId();
+        loadingTimeoutId = setLoadingTimeoutId();
+        return;
+      }
+
+      // Clear the existing timeout and set a new one
+      clearTimeout(fetchChatsTimeoutId);
+      clearTimeout(loadingTimeoutId);
+      fetchChatsTimeoutId = setFetchChatsTimeoutId();
+      loadingTimeoutId = setLoadingTimeoutId();
+
+      setChats((prevChats) => {
+        const lastChat = prevChats[prevChats.length - 1];
+        if (lastChat.message === DUMMY_LOADING_QUESTION_MESSAGE) {
+          return [
+            ...prevChats.slice(0, prevChats.length - 1),
+            { type: "question", message: content }
+          ]
+        }
+
+        return [
+          ...prevChats.slice(0, prevChats.length - 1),
+          { type: "question", message: lastChat.message + content }
+        ];
+      });
+    });
+
+    eventSource.addEventListener('error', (error) => {
+      console.error('EventSource failed:', error);
+      eventSource.close()
+    });
+  }
+
+  /**
+   * just start loading. It will be stopped by the caller.
+   */
+  const withStartLoading = (setLoadingState, fn) => async (...args) => {
+    setLoadingState(true);
+    await fn(...args);
+  };
+
+  const submitAnswerWithStartLoading = withStartLoading(setIsSubmitAnswerLoading, submitAnswer);
+
+  const ChatItem = ({ chat, index }) => {
+    const getEmojiByScore = (score) => {
+      if (score === 0) return { emoji: '😞', description: '기초를 다지는 중이에요! 조금만 더 힘내봐요!' };
+      if (score <= 30) return { emoji: '😐', description: '기초를 잘 다지고 있어요! 계속해서 노력해봐요!' };
+      if (score <= 60) return { emoji: '🙂', description: '좋아요! 이제 더 깊이 공부해봐요!' };
+      if (score < 100) return { emoji: '😃', description: '훌륭해요! 거의 다 왔어요!' };
+      return { emoji: '🎉', description: '완벽해요! 축하합니다!' };
+    };
+
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
+    };
+
+    return (
+      <Box key={index} sx={{ paddingTop: '10px' }}>
+        <Box sx={{ padding: '5px', display: 'flex', justifyContent: 'space-between' }}>
           <Box>
-            <Typography variant="caption" sx={{ color: 'gray' }}>
-              {formatDate(chat.createdAt)}
-            </Typography>
+            {chat.type === "question" ? "질문" :
+              typeof chat.score === "number" ? (
+                <>
+                  답변 ({chat.score}/{CHAT_MAX_SCORE}){" "}
+                  <StyledTooltip title={getEmojiByScore(chat.score).description}>
+                    <span>{getEmojiByScore(chat.score).emoji}</span>
+                  </StyledTooltip>
+                </>
+              ) : "답변"
+            }
           </Box>
-        )}
+          {chat.type === "answer" && chat.createdAt && (
+            <Box>
+              <Typography variant="caption" sx={{ color: 'gray' }}>
+                {formatDate(chat.createdAt)}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+        <Divider/>
+        <Box sx={{ padding: '10px' }}>
+          {chat.message.split('\n').map((line, index) => (
+            <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
+              {line}
+            </Typography>
+          ))}
+        </Box>
       </Box>
-      <Divider/>
-      <Box sx={{ padding: '10px' }}>
-        {chat.message.split('\n').map((line, index) => (
-          <Typography key={index} variant="subtitle1" sx={{ paddingTop: '5px', paddingBottom: '5px' }}>
-            {line}
-          </Typography>
-        ))}
-      </Box>
-    </Box>
-  );
+    )
+  };
 
   const ChatList = ({ chats, isChatError }) => (
     isChatError ? <Alert severity={"error"}> 채팅 목록을 불러오는 중 오류가 발생했습니다.</Alert> :
@@ -215,37 +277,8 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
     </Box>
   );
 
-  const AnswerInputFieldBox = () => {
-    const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
-
-    return (
-      <Box>
-        <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline
-          onChange={(e) => {
-            setIsAnswerEmpty(e.target.value.trim() === "")
-          }}/>
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '10px'
-        }}>
-          <ClearButton disabled={chats.length <= 1}/>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ paddingRight: '10px' }}>
-              제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
-            </Box>
-            <Button variant="contained"
-              onClick={submitAnswerWithLoading}
-              disabled={isSubmitAnswerLoading || isAnswerEmpty}>제출하기
-            </Button>
-          </Box>
-        </Box> </Box>
-    );
-  };
-
   const renderAnswerBox = () => {
-    const hasNotAnswer = () => {
+    const usedAllAnswers = () => {
       const answerChats = chats.filter(it => it.type === "answer");
       return answerChats.length >= MAX_ANSWER_COUNT;
     }
@@ -255,16 +288,6 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
     const lastAnswerChat = chats[chats.length - 2];
     if (lastAnswerChat?.score === 100) {
       return `🎉 축하합니다. 다른 질문도 도전해보세요`;
-    }
-
-    if (isSubmitAnswerLoading) {
-      return (
-        <Box sx={{
-          padding: '10px',
-          display: 'flex',
-          alignItems: 'center',
-        }}> <CircularProgress sx={{ padding: '10px' }}/> 답변 제출 중...⏳ </Box>
-      );
     }
 
     if (isSubmitAnswerError) {
@@ -297,7 +320,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
       )
     }
 
-    if (hasNotAnswer()) {
+    if (usedAllAnswers()) {
       return (
         <>
           <Divider/>
@@ -317,6 +340,44 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
 
     return (
       <AnswerInputFieldBox/>
+    );
+  };
+
+  const AnswerInputFieldBox = () => {
+    const [isAnswerEmpty, setIsAnswerEmpty] = useState(true);
+
+    if (isSubmitAnswerLoading) return null
+    if (isSubmitSaving) return (
+      <Box sx={{
+        padding: '10px',
+        display: 'flex',
+        alignItems: 'center',
+      }}> <CircularProgress sx={{ padding: '10px' }}/> 답변 저장중...⏳ </Box>
+    )
+
+    return (
+      <Box>
+        <TextField id="answer" variant="outlined" label="답변을 최대한 자세히 작성하세요." fullWidth multiline
+          onChange={(e) => {
+            setIsAnswerEmpty(e.target.value.trim() === "")
+          }}/>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '10px'
+        }}>
+          <ClearButton disabled={chats.length <= 1}/>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ paddingRight: '10px' }}>
+              제출한 답변 횟수: {chats.filter(it => it.type === "answer")?.length ?? 0} / {MAX_ANSWER_COUNT}
+            </Box>
+            <Button variant="contained"
+              onClick={submitAnswerWithStartLoading}
+              disabled={isAnswerEmpty}>제출하기
+            </Button>
+          </Box>
+        </Box> </Box>
     );
   };
 
