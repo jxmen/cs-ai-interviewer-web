@@ -50,7 +50,7 @@ export default function Home() {
         setData(json.data);
       }
     } catch (e) {
-      if (e.code === "REQUIRE_LOGIN") {
+      if (e.code === "REQUIRE_LOGIN" || e.code === "INVALID_TOKEN") {
         await handleRequireLogin(tab);
       } else {
         setIsError(true);

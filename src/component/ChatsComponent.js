@@ -64,7 +64,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
       }
     })
       .catch(async (e) => {
-        if (e.code === "REQUIRE_LOGIN") return logout()
+        if (e.code === "REQUIRE_LOGIN" || e.code === "INVALID_TOKEN") return logout()
 
         setIsChatLoading(false)
         setIsChatError(true)
@@ -131,7 +131,7 @@ export default function ChatsComponent({ subjectId, subjectDetailQuestion }) {
 
             setChats(data);
           } catch (e) {
-            if (e.code === "REQUIRE_LOGIN") return logout()
+            if (e.code === "REQUIRE_LOGIN" || e.code === "INVALID_TOKEN") return logout()
 
             setIsSubmitAnswerError(true);
           }
