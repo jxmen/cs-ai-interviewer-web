@@ -26,15 +26,9 @@ export default function Home() {
   const [data, setData] = useState([]); // [{ id, title, category, maxScore? }
   const [isError, setIsError] = useState(false);
 
-  const handleRequireLogin = async (tab) => {
+  const handleRequireLogin = async () => {
     LocalStorage.logout();
     setIsLoggedIn(false);
-
-    await fetchSubjects(tab)
-      .then(json => setData(json.data))
-      .catch(_ => setIsError(true))
-
-    router.refresh();
   };
 
   const loadSubjects = async () => {
